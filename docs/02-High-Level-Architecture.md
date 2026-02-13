@@ -498,36 +498,96 @@ ARENAOPS/
 │       ├── Constants/
 │       └── Extensions/
 │
-├── FRONTEND/
-│   └── arenaops-web/                         # Next.js App (App Router)
-│       ├── app/
-│       │   ├── (auth)/                       # Auth route group
-│       │   │   ├── login/page.tsx
-│       │   │   └── register/page.tsx
-│       │   ├── (dashboard)/                  # Dashboard route group
-│       │   │   ├── stadiums/page.tsx
-│       │   │   ├── events/page.tsx
-│       │   │   ├── events/[id]/page.tsx
-│       │   │   ├── events/[id]/layout-editor/page.tsx  # Event layout customization
-│       │   │   ├── bookings/page.tsx
-│       │   │   └── admin/page.tsx
-│       │   ├── api/                           # BFF Proxy (Route Handlers)
-│       │   │   ├── auth/[...slug]/route.ts
-│       │   │   └── core/[...slug]/route.ts
-│       │   ├── layout.tsx
-│       │   └── page.tsx                       # Landing / Nearby Events (SSR)
-│       ├── components/
-│       │   ├── seat-map/                      # SVG seat picker + SignalR (Client Component)
-│       │   ├── layout-editor/                 # Drag-and-drop (Client Component)
-│       │   └── ui/                            # Shared UI components
-│       ├── lib/
-│       │   ├── api.ts                         # API client helpers
-│       │   ├── auth.ts                        # JWT cookie/session helpers
-│       │   └── signalr.ts                     # SignalR client connection
-│       ├── next.config.ts
-│       ├── package.json
-│       └── tsconfig.json
-│
+
+
+FRONTEND/
+└── arenaops-web/
+├── src/
+│   ├── app/
+│   │   ├── (auth)/
+│   │   │   ├── login/page.tsx
+│   │   │   └── register/page.tsx 
+│   │   ├── (dashboard)/
+│   │   │      ├── stadiums/page.tsx
+│   │   │      ├── events/page.tsx
+│   │   │      ├── sevents/[id]/page.tsx
+│   │   │      ├── events/[id]/layout-editor/page.tsx
+│   │   │      ├── bookings/page.tsx
+│   │   │      ├── admin/page.tsx
+    │   ├── api/
+    │   ├── layout.tsx
+    │   └── page.tsx
+    │
+    ├── components/                # Pure reusable UI components
+    │   ├── ui/
+    │   ├── seat-map/
+    │   └── layout-editor/
+    │
+    ├── features/                  # Feature-based modular architecture
+    │   ├── auth/
+    │   │   ├── api.ts
+    │   │   ├── hooks.ts
+    │   │   ├── slice.ts
+    │   │   ├── components/
+    │   │   └── types.ts
+    │   │
+    │   ├── events/
+    │   │   ├── api.ts
+    │   │   ├── hooks.ts
+    │   │   ├── queries.ts
+    │   │   ├── components/
+    │   │   └── types.ts
+    │   │
+    │   ├── bookings/
+    │   └── stadiums/
+    │
+    ├── store/                     # Redux Toolkit
+    │   ├── index.ts
+    │   ├── rootReducer.ts
+    │   └── providers.tsx
+    │
+    ├── services/                  # TanStack Query config + global fetch logic
+    │   ├── query-client.ts
+    │   ├── axios.ts
+    │   └── interceptors.ts
+    │
+    ├── hooks/                     # Global reusable hooks
+    │   ├── useAuth.ts
+    │   ├── useDebounce.ts
+    │   └── usePagination.ts
+    │
+    ├── styles/                    # SCSS architecture
+    │   ├── components/
+    │   ├── _mixins.scss
+    │   ├── _variables.scss
+    │   ├── base.scss
+    │   ├── globals.scss
+    │   └── tailwind.css
+    │
+    ├── types/                    # Types architecture
+    │   ├── style.d.ts
+    │
+    ├── utils/                     # Pure helper functions
+    │   ├── formatDate.ts
+    │   ├── seatHelpers.ts
+    │   └── constants.ts
+    │
+    ├── lib/                       # Keep existing (server-related helpers)
+    │   ├── api.ts
+    │   ├── auth.ts
+    │   └── signalr.ts
+    │
+    ├── providers/                 # App-level providers wrapper
+    │   ├── redux-provider.tsx
+    │   ├── query-provider.tsx
+    │   └── theme-provider.tsx
+    │
+    ├── middleware.ts              # Route protection
+    │
+    ├── next.config.ts
+    ├── package.json
+    └── tsconfig.json
+
 ├── docs/                                      # Project documentation
 │
 └── docker-compose.yml                         # Orchestrates all services
