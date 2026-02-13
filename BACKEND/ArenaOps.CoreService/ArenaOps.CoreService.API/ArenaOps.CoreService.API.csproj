@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\ArenaOps.CoreService.Application\ArenaOps.CoreService.Application.csproj" />
+    <ProjectReference Include="..\ArenaOps.CoreService.Infrastructure\ArenaOps.CoreService.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\ArenaOps.Shared\ArenaOps.Shared.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>
