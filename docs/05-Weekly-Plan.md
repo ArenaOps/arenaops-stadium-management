@@ -422,3 +422,335 @@
 - ✅ Full payment flow with webhook confirmation
 - ✅ Nearby event search works
 - ✅ Auth and Core services run independently
+
+---
+
+# DETAILED DAILY BREAKDOWN
+
+> Below is the day-by-day task allocation for each developer, aligned with the weekly overview above.
+> Tasks are dependency-ordered — no task depends on work not yet completed.
+
+---
+
+## Week 1 — Daily Allocation (2 BE + 2 FE)
+
+### Day 1 (Monday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Create `ArenaOps.AuthService` solution with Clean Architecture layers (API, Core, Infrastructure) | Solution structure compiles |
+| **BE2** | Create `ArenaOps.CoreService` solution with Clean Architecture layers + `ArenaOps.Shared` class library | Solution structure compiles |
+| **FE1** | Initialize Next.js project with App Router + TypeScript, configure folder structure | `npm run dev` works |
+| **FE2** | Set up design system: global styles, CSS variables, typography (Google Fonts), color palette | Style tokens ready |
+
+### Day 2 (Tuesday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Create Auth DB entities: Users, Roles, UserRoles, RefreshTokens, AuthAuditLog + EF Core DbContext + initial migration | Migration runs, tables created |
+| **BE2** | Set up Docker Compose: SQL Server container + Redis container + Docker network | `docker-compose up` starts DB + Redis |
+| **FE1** | Build Login page UI (form, validation, error states) | Login page renders |
+| **FE2** | Build navigation bar with responsive design + placeholder auth state | Navbar component ready |
+
+### Day 3 (Wednesday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Implement RSA key pair generation, JWT token service (sign with private key), export public key endpoint | JWT tokens issued with RSA |
+| **BE2** | Create Core DB entities: Stadium, SeatingPlan, Section, Seat, Landmark + EF Core DbContext + migration | Migration runs, tables created |
+| **FE1** | Build Register page UI (form with role selection, validation) | Register page renders |
+| **FE2** | Build landing page hero section + event discovery placeholder | Landing page renders |
+
+### Day 4 (Thursday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Implement Register + Login endpoints, seed default roles (Admin, StadiumOwner, Organizer, User), password hashing | Register/Login return JWT |
+| **BE2** | Configure JWT validation on Core Service using Auth's RSA public key, add `[Authorize]` test endpoint | Core rejects invalid tokens |
+| **FE1** | Implement BFF Route Handlers: `app/api/auth/[...slug]/route.ts` and `app/api/core/[...slug]/route.ts` | Proxy forwards requests |
+| **FE2** | Implement role-based route guards (middleware), build dashboard skeleton with sidebar | Protected routes work |
+
+### Day 5 (Friday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Implement Refresh Token rotation + Logout endpoint + audit logging for login attempts | Token refresh works |
+| **BE2** | Configure Serilog for both services, add health check endpoints, configure Dapper alongside EF Core | Logs visible, health checks respond |
+| **FE1** | Set up JWT storage via httpOnly cookies (middleware), connect Login/Register forms to BFF proxy | End-to-end auth works via browser |
+| **FE2** | Build loading state templates, error boundary components, toast notification system | UX components ready |
+
+---
+
+## Week 2 — Daily Allocation (3 BE + 2 FE)
+
+> **Backend 3 joins this week**
+
+### Day 1 (Monday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Add DB indexes for Core tables, implement authorization policies (`[Authorize(Roles = "StadiumOwner")]`) | Policies configured |
+| **BE2** | Implement Stadium CRUD APIs (POST/GET/PUT) with EF Core | Stadium endpoints work |
+| **BE3** | Set up Redis connection in Core Service, implement `IDistributedCache` wrapper | Redis connected |
+| **FE1** | Build base SVG seat map renderer component (draws sections as colored blocks) | SVG renders sections |
+| **FE2** | Build stadium creation form (name, address, city, state, country, lat/lng) | Form submits to API |
+
+### Day 2 (Tuesday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Set up Dapper query infrastructure (DapperContext, query extensions) in Core Service | Dapper utilities ready |
+| **BE2** | Implement SeatingPlan APIs (POST/GET), link to Stadium | Template CRUD works |
+| **BE3** | Implement Redis caching for stadium list + seating plan data, cache invalidation on update | Cache layer active |
+| **FE1** | Render individual seats within SVG sections (circles with row/number labels) | Seats render inside sections |
+| **FE2** | Build layout editor canvas — drag-and-drop section positioning using mouse events | Sections draggable on canvas |
+
+### Day 3 (Wednesday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Write stored procedure SQL scripts: `sp_HoldSeat`, `sp_CleanupExpiredHolds`, `sp_ConfirmBookingSeats` | SP scripts ready (not deployed yet) |
+| **BE2** | Implement Section APIs (POST/GET/PUT/DELETE) with Type field (Seated/Standing) | Section CRUD works |
+| **BE3** | Implement rate limiting middleware using Redis (per-IP, per-user) | Rate limiter active |
+| **FE1** | Handle standing sections in SVG (capacity block instead of individual seats) | Standing sections render |
+| **FE2** | Build "Add Section" panel in layout editor (name, type selector Seated/Standing, color picker) | Sections added via UI |
+
+### Day 4 (Thursday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Implement Admin endpoints: approve stadium, list pending stadiums | Admin approval works |
+| **BE2** | Implement Seat APIs (POST/GET/bulk generate for Seated sections) | Seat CRUD + bulk creation works |
+| **BE3** | Set up SignalR Hub (`SeatStatusHub`) with `JoinEventRoom` + `LeaveEventRoom` methods | Hub accepts connections |
+| **FE1** | Add zoom/pan controls to SVG seat map (scroll-to-zoom, click-drag-pan) | Map is navigable |
+| **FE2** | Build seat grid generator UI for Seated sections (rows × seats input, auto-generate) | Seats generated in editor |
+
+### Day 5 (Friday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Implement secure owner onboarding: Admin creates owner → system sends password-reset token via email | Owner onboarding flow works (SC-9) |
+| **BE2** | Implement Landmark APIs (POST/GET/PUT/DELETE) | Landmark CRUD works |
+| **BE3** | Set up SignalR client connection utility, test connection from frontend to hub | SignalR connects end-to-end |
+| **FE1** | Integrate SVG seat map with real API data (load template sections + seats from backend) | Map shows real data |
+| **FE2** | Build landmark placement in layout editor (stage, gate, exit icons) + save layout to backend | Full layout saves |
+
+---
+
+## Week 3 — Daily Allocation (3 BE + 2 FE)
+
+### Day 1 (Monday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Design layout cloning data flow: SeatingPlan → EventSeatingPlan, Section → EventSection, Landmark → EventLandmark | Design documented |
+| **BE2** | Implement Event CRUD APIs (POST/GET/PUT) with status workflow (Draft → Live → Completed → Cancelled) | Event CRUD works |
+| **BE3** | Implement TicketType APIs (POST/GET) — create ticket types per event | TicketType endpoints work |
+| **FE1** | Build event listing page with filters (status, city) | Events list renders |
+| **FE2** | Build event creation form (name, stadium selector, date pickers) | Event form submits |
+
+### Day 2 (Tuesday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Implement `POST /api/events/{id}/layout/clone` — transaction-wrapped cloning of template → event layout | Clone endpoint works |
+| **BE2** | Implement EventSlot APIs (POST/GET) — add time slots to events | Time slots work |
+| **BE3** | Implement SectionTicketType mapping API (map ticket types to event sections) | Section-ticket mapping works |
+| **FE1** | Build event detail page (event info, time slots, layout preview) | Event detail renders |
+| **FE2** | Build template selector UI — list available templates for a stadium, trigger clone | Clone button works via UI |
+
+### Day 3 (Wednesday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Implement event layout customization APIs: add/update/delete EventSections + EventLandmarks (before lock) | Customization endpoints work |
+| **BE2** | Implement layout lock endpoint + validation: reject edits when `IsLocked = true` | Lock prevents edits (SC-8) |
+| **BE3** | Implement price assignment logic during seat generation (read from SectionTicketType) | Prices assigned to seats |
+| **FE1** | Build event seat map preview (read-only, shows cloned layout with section types) | Preview shows cloned layout |
+| **FE2** | Build event layout editor (reuse drag-and-drop, add/remove sections, add standing areas) | Event customization via UI |
+
+### Day 4 (Thursday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Implement `POST /api/events/{id}/generate-seats` — clone Seats → EventSeats for Seated, generate slots for Standing | EventSeat generation works (SC-7) |
+| **BE2** | Implement `GET /api/events/{id}/layout` via Dapper (full event layout with sections + landmarks + seats) | Layout read via Dapper |
+| **BE3** | Cache event layout data in Redis, invalidate on layout changes | Event cache works |
+| **FE1** | Display ticket prices per section on event seat map | Prices visible on map |
+| **FE2** | Build lock layout + generate seats buttons with confirmation dialogs | Lock + generate via UI |
+
+### Day 5 (Friday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Integration test: create stadium → template → event → clone → customize → lock → generate seats | Full layout flow verified |
+| **BE2** | Add validation: must lock before generating seats, cannot generate twice | Guard rails in place |
+| **BE3** | Implement ticket type pricing display API — section details with mapped price | Pricing API works |
+| **FE1** | Build ticket type management UI (create ticket types, set prices) | Ticket management works |
+| **FE2** | Build event management dashboard: list organizer's events, show status badges | Dashboard shows events |
+
+---
+
+## Week 4 — Daily Allocation (3 BE + 2 FE)
+
+> **Most critical week — seat booking and concurrency**
+
+### Day 1 (Monday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Deploy stored procedures to DB (`sp_HoldSeat`, `sp_CleanupExpiredHolds`, `sp_ConfirmBookingSeats`) | SPs exist in DB |
+| **BE2** | Implement seat map read query via Dapper: `GET /api/events/{id}/seats` with status for all seats | Seat map API works |
+| **BE3** | Implement background hosted service (`IHostedService`) that calls `sp_CleanupExpiredHolds` every 1-2 min | Cleanup job runs |
+| **FE1** | Build interactive seat picker: click seat → highlight → add to selection cart | Seat selection UI works |
+| **FE2** | Build booking summary sidebar (selected seats, section names, prices, total) | Summary panel renders |
+
+### Day 2 (Tuesday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Implement `POST /api/events/{id}/seats/{seatId}/hold` — calls `sp_HoldSeat` via Dapper, returns success/failure | Seat hold works (SC-1) |
+| **BE2** | Implement booking creation endpoint: `POST /api/bookings` — validates all seats held by requesting user | Booking creation works |
+| **BE3** | Integrate cleanup job with SignalR — broadcast released seats after cleanup | Cleanup broadcasts releases |
+| **FE1** | Connect seat picker to hold API — click seat triggers hold, show loading/error states | Hold works from UI |
+| **FE2** | Build 2-minute countdown timer component, handle timer expiration (auto-release message) | Timer component works |
+
+### Day 3 (Wednesday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Implement seat release endpoint + standing section hold (hold N available slots via SP) | Release + standing hold work |
+| **BE2** | Implement booking status workflow: PendingPayment → Confirmed / Expired / Cancelled | Booking state machine works |
+| **BE3** | Implement pending booking cleanup job: cancel unpaid bookings > 10 min | Expired bookings cancelled |
+| **FE1** | Implement SignalR client integration: subscribe to `SeatStatusChanged`, update seat colors in real-time | Real-time updates work (SC-4) |
+| **FE2** | Build standing section UI: quantity selector + "Hold Slots" button | Standing booking UI works |
+
+### Day 4 (Thursday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Integrate SignalR broadcasts after each hold/release/confirm — `SeatStatusChanged` event | Broadcasts fire on state change |
+| **BE2** | Implement `POST /api/bookings/{id}/confirm` via Dapper + SP, `POST /api/bookings/{id}/cancel` | Confirm + cancel work |
+| **BE3** | Log cleanup actions to `SeatLockCleanupLog` table + implement bulk broadcast (`BulkSeatStatusChanged`) | Cleanup logged + bulk broadcast |
+| **FE1** | Color-code seats by status: 🟢 Available, 🟡 Held (yours), 🔴 Held/Confirmed (others), ⚫ Inactive | Color states correct |
+| **FE2** | Build booking list page: `GET /api/bookings/my` — show user's bookings with status badges | My Bookings page works |
+
+### Day 5 (Friday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Concurrency testing: simulate 10+ concurrent hold requests for same seat — verify only 1 succeeds | Concurrency verified (SC-1) |
+| **BE2** | Implement admin booking overview API: `GET /api/admin/bookings` with filters | Admin booking view works |
+| **BE3** | Implement `GET /api/bookings/{id}` — full booking details with seat labels + prices | Booking detail API works |
+| **FE1** | Multi-seat selection: hold multiple seats, show "Proceed to Payment" button when seats held | Multi-select + proceed works |
+| **FE2** | Handle error states: seat already held, hold expired, booking failed — user-friendly messages | Error UX polished |
+
+---
+
+## Week 5 — Daily Allocation (3 BE + 2 FE)
+
+### Day 1 (Monday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Design mock payment gateway interface (`IPaymentGateway`) with strategy pattern for easy swap to Razorpay/Stripe | Interface designed |
+| **BE2** | Implement location filtering: `GET /api/stadiums/nearby` and `GET /api/events/nearby` via Dapper (Haversine formula) | Nearby endpoints work |
+| **BE3** | Implement mock payment gateway: `MockPaymentGateway` implementing `IPaymentGateway` — returns success after delay | Mock gateway works |
+| **FE1** | Build payment flow UI: "Pay Now" button → mock payment confirmation screen | Payment UI renders |
+| **FE2** | Build Nearby Events page (Server Component — SSR): city input, events sorted by distance | Nearby page renders |
+
+### Day 2 (Tuesday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Implement `POST /api/payments/initiate` — creates Payment record, calls mock gateway, uses idempotency key | Payment initiation works |
+| **BE2** | Implement `GET /api/events/search` — search by query + city | Event search works |
+| **BE3** | Implement mock webhook handler: `POST /api/payments/webhook` — simulates gateway callback | Webhook handler works |
+| **FE1** | Connect payment UI to initiate endpoint, handle success/failure callbacks | Payment flow end-to-end |
+| **FE2** | Build event search UI with search bar + city filter | Search UI works |
+
+### Day 3 (Wednesday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Connect webhook to booking confirmation: verify → call `sp_ConfirmBookingSeats` → SignalR broadcast | Webhook confirms booking (SC-2) |
+| **BE2** | Implement idempotency key storage + duplicate payment prevention | Idempotency works |
+| **BE3** | Implement email service: send booking confirmation email after successful payment | Email sends (SC-2) |
+| **FE1** | Build booking confirmation page: digital ticket view with seat details, event info, booking ID | Confirmation page renders |
+| **FE2** | Build admin dashboard: system stats, pending stadium approvals, recent bookings | Admin dashboard works |
+
+### Day 4 (Thursday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Implement `POST /api/payments/refund` (admin) — cancel booking + release seats + broadcast | Refund flow works |
+| **BE2** | Implement `GET /api/admin/events/{id}/revenue` — revenue breakdown per event | Revenue API works |
+| **BE3** | Implement `GET /api/admin/dashboard` — system-wide stats (total bookings, revenue, active events) | Dashboard stats API works |
+| **FE1** | Add email confirmation info to booking success page | Email confirmed in UI |
+| **FE2** | Build stadium owner dashboard: list stadiums, templates, events using venue | Owner dashboard works |
+
+### Day 5 (Friday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | End-to-end test: Register → Login → Browse → Hold → Book → Pay → Confirm → Email | Full flow verified (SC-2) |
+| **BE2** | Implement payment status endpoint: `GET /api/payments/{id}` | Payment status works |
+| **BE3** | Implement payment reconciliation background job (hourly: check pending payments) | Reconciliation job runs |
+| **FE1** | Test full booking flow in browser: seat pick → hold → pay → confirm → see updated seat map | Browser flow works |
+| **FE2** | Build organizer dashboard: event management, ticket sales monitoring, layout status | Organizer dashboard works |
+
+---
+
+## Week 6 — Daily Allocation (3 BE + 2 FE)
+
+> **Integration testing, performance, polish**
+
+### Day 1 (Monday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Integration test suite: full flow (Register → Login → Create Stadium → Template → Event → Clone → Lock → Generate → Hold → Book → Pay → Confirm) | Integration tests pass |
+| **BE2** | SQL index optimization: analyze query plans for seat map reads, add missing indexes | Queries optimized |
+| **BE3** | Performance test: Redis caching effectiveness — measure seat map read times with/without cache | Cache benchmarks documented |
+| **FE1** | Performance audit: Lighthouse report, optimize SVG rendering for large stadiums (500+ seats) | Lighthouse > 90 |
+| **FE2** | UI review: consistent colors, spacing, responsive design across all pages | UI consistency pass |
+
+### Day 2 (Tuesday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Concurrency test: 50+ concurrent requests to hold same seat — verify exactly 1 succeeds, 49 fail cleanly | Concurrency proven (SC-1) |
+| **BE2** | Unit tests: layout cloning logic, event status workflow, lock validation | Unit tests pass |
+| **BE3** | Unit tests: stored procedure results, background job scheduling, email service | Unit tests pass |
+| **FE1** | Seat selection animations: hover effects, hold transition, confirmed visual feedback | Animations smooth |
+| **FE2** | Error boundary review: all API errors surfaced with user-friendly messages | Error handling complete |
+
+### Day 3 (Wednesday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Test seat lifecycle edge cases: double hold, hold expired mid-payment, cancel after confirm attempt | Edge cases handled |
+| **BE2** | Test standing section: hold N slots, verify capacity enforcement, test oversell prevention | Standing sections robust (SC-7) |
+| **BE3** | Test email delivery: booking confirmation, password reset link, verify no plain credentials in email | Email tests pass (SC-9) |
+| **FE1** | Test SignalR: open 2 browsers, hold seat in one, verify real-time update in other | Real-time verified (SC-4) |
+| **FE2** | Test layout immutability: verify UI prevents edits after lock, test all layout editor states | Immutability verified (SC-8) |
+
+### Day 4 (Thursday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Finalize Docker Compose: all services, environment-specific configs, volume mounts | Docker Compose final |
+| **BE2** | Generate Swagger/OpenAPI docs for Auth Service | Auth Swagger ready |
+| **BE3** | Generate Swagger/OpenAPI docs for Core Service | Core Swagger ready |
+| **FE1** | Responsive design pass: test all pages on mobile, tablet, desktop breakpoints | Responsive complete |
+| **FE2** | Digital ticket view: polished booking confirmation with QR code placeholder, event details | Ticket view polished |
+
+### Day 5 (Friday)
+
+| Dev | Task | Deliverable |
+|-----|------|-------------|
+| **BE1** | Final verification: run all success criteria (SC-1 through SC-9) and document results | All SCs validated |
+| **BE2** | Write setup guide README: prerequisites, Docker setup, seed data, first-run instructions | README complete |
+| **BE3** | Final environment cleanup: remove hardcoded secrets, use env vars, test clean `docker-compose up` | Clean deployment works (SC-5) |
+| **FE1** | Final E2E walkthrough in browser: complete user journey, screenshot key flows | E2E documented |
+| **FE2** | Final UI polish: add micro-animations, transitions, empty states, 404 page | UI polish complete |

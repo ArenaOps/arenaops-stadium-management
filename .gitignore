@@ -1,0 +1,33 @@
+# GSD / Agent / Gemini folders
+.agent/
+.gemini/
+.gsd/
+
+# Project rules (GSD related)
+PROJECT_RULES.md
+GSD-STYLE.md
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# IDE
+.vs/
+.vscode/
+*.suo
+*.user
+
+# .NET
+bin/
+obj/
+*.dll
+*.pdb
+
+# Node
+node_modules/
+
+# Environment
+.env
+.env.local
+.env.*.local
