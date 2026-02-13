@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+@theme {
+    --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    --font-heading: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --animate-accordion-down: accordion-down 0.2s ease-out;
+    --animate-accordion-up: accordion-up 0.2s ease-out;
+
+    @keyframes accordion-down {
+        from {
+            height: 0;
+        }
+
+        to {
+            height: var(--radix-accordion-content-height);
+        }
+    }
+
+    @keyframes accordion-up {
+        from {
+            height: var(--radix-accordion-content-height);
+        }
+
+        to {
+            height: 0;
+        }
+    }
+}
+
+/*
+  Design System Variables
+  Using HSL for easy opacity manipulation and theming.
+  Based on a scalable system for dark/light modes.
+*/
+@layer base {
+    :root {
+        --background: oklch(0.985 0 0);
+        --foreground: oklch(0.141 0.005 285.823);
+
+        /* Primary: Vibrant Blue/Indigo - Trustworthy & energetic */
+        --primary: oklch(0.55 0.2 260);
+        /* Deep vibrant blue */
+        --primary-foreground: oklch(0.985 0 0);
+
+        /* Secondary: Slate/Gray - Professional & neutral */
+        --secondary: oklch(0.92 0 0);
+        --secondary-foreground: oklch(0.21 0.006 285.885);
+
+        /* Muted: Subtle backgrounds */
+        --muted: oklch(0.96 0 0);
+        --muted-foreground: oklch(0.552 0.016 285.938);
+
+        /* Accent: Highlights (e.g., hover states) */
+        --accent: oklch(0.96 0 0);
+        --accent-foreground: oklch(0.21 0.006 285.885);
+
+        /* Destructive: Error states */
+        --destructive: oklch(0.6 0.15 25);
+        --destructive-foreground: oklch(0.985 0 0);
+
+        /* Borders & Inputs */
+        --border: oklch(0.87 0 0);
+        --input: oklch(0.87 0 0);
+        --ring: oklch(0.55 0.2 260);
+        /* Matches Primary */
+
+        --radius: 0.625rem;
+    }
+
+    .dark {
+        --background: oklch(0.141 0.005 285.823);
+        --foreground: oklch(0.985 0 0);
+
+        --primary: oklch(0.6 0.2 260);
+        --primary-foreground: oklch(0.985 0 0);
+
+        --secondary: oklch(0.274 0.006 286.033);
+        --secondary-foreground: oklch(0.985 0 0);
+
+        --muted: oklch(0.274 0.006 286.033);
+        --muted-foreground: oklch(0.705 0.015 286.067);
+
+        --accent: oklch(0.274 0.006 286.033);
+        --accent-foreground: oklch(0.985 0 0);
+
+        --destructive: oklch(0.45 0.15 25);
+        --destructive-foreground: oklch(0.985 0 0);
+
+        --border: oklch(0.274 0.006 286.033);
+        --input: oklch(0.274 0.006 286.033);
+        --ring: oklch(0.6 0.2 260);
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
+}
