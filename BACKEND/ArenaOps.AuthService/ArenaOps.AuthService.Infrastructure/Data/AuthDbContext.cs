@@ -12,6 +12,7 @@ public class AuthDbContext : DbContext
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<AuthAuditLog> AuthAuditLogs => Set<AuthAuditLog>();
+    public DbSet<ExternalLogin> ExternalLogins => Set<ExternalLogin>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -28,9 +29,11 @@ public class AuthDbContext : DbContext
             entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
             entity.HasIndex(e => e.Email).IsUnique();
 
-            entity.Property(e => e.PasswordHash).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.PasswordHash).IsRequired(false).HasMaxLength(500);
             entity.Property(e => e.FullName).IsRequired().HasMaxLength(200);
             entity.Property(e => e.PhoneNumber).HasMaxLength(20);
+            entity.Property(e => e.ProfilePictureUrl).HasMaxLength(500);
+            entity.Property(e => e.AuthProvider).IsRequired().HasMaxLength(20).HasDefaultValue("Local");
 
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.IsEmailVerified).HasDefaultValue(false);
@@ -110,6 +113,28 @@ public class AuthDbContext : DbContext
 
             entity.HasOne(e => e.User)
                 .WithMany(u => u.AuditLogs)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // =====================
+        // EXTERNAL LOGIN CONFIGURATION
+        // =====================
+        modelBuilder.Entity<ExternalLogin>(entity =>
+        {
+            entity.HasKey(e => e.ExternalLoginId);
+            entity.Property(e => e.ExternalLoginId).HasDefaultValueSql("NEWSEQUENTIALID()");
+
+            entity.Property(e => e.Provider).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.ProviderKey).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.ProviderDisplayName).HasMaxLength(200);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+            // Composite unique index — one Google account → one ArenaOps user
+            entity.HasIndex(e => new { e.Provider, e.ProviderKey }).IsUnique();
+
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.ExternalLogins)
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });

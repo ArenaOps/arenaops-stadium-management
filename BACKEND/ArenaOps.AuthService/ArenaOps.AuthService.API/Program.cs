@@ -23,6 +23,13 @@ builder.Services.AddDbContext<AuthDbContext>(options =>
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddSingleton<ITokenService, TokenService>();
 
+// Auth Service
+builder.Services.AddScoped<IAuthService, ArenaOps.AuthService.Infrastructure.Services.AuthService>();
+
+// Google OAuth
+builder.Services.Configure<GoogleAuthSettings>(builder.Configuration.GetSection("GoogleAuth"));
+builder.Services.AddHttpClient<IGoogleAuthService, GoogleAuthService>();
+
 // JWT Bearer Authentication
 builder.Services.AddAuthentication(options =>
 {
@@ -67,6 +74,9 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 var app = builder.Build();
+
+// Global exception handler — must be first in pipeline
+app.UseMiddleware<ArenaOps.AuthService.API.Middleware.GlobalExceptionHandlerMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
