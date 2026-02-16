@@ -18,6 +18,21 @@
 | `/api/auth/forgot-password` | POST | `{ email }` | `{ message }` |
 | `/api/auth/reset-password` | POST | `{ token, newPassword }` | `{ message }` |
 
+## Google OAuth
+
+| Endpoint | Method | Request Body | Response |
+| --- | --- | --- | --- |
+| `/api/auth/google` | POST | `{ code, redirectUri }` | `{ accessToken, refreshToken, userId, roles, isNewUser }` |
+| `/api/auth/google/link` | POST | `{ code, redirectUri }` | `{ message }` — Links Google to existing account (requires JWT) |
+| `/api/auth/google/unlink` | POST | *(empty)* | `{ message }` — Unlinks Google (only if user has password set, requires JWT) |
+
+**Google OAuth Flow:**
+1. Frontend redirects user to Google consent screen
+2. Google redirects back with an authorization `code`
+3. Frontend sends the `code` to `/api/auth/google`
+4. Auth Service exchanges the code with Google for user info (email, name, picture)
+5. Auth Service finds or creates a user, then returns JWT tokens
+
 ## User Management (Admin)
 
 | Endpoint | Method | Response |

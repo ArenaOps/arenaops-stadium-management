@@ -43,9 +43,10 @@
 ### Backend 1
 
 - Set up `ArenaOps.AuthService` with Clean Architecture (API, Core, Infrastructure)
-- Create Auth DB schema (Users, Roles, UserRoles, RefreshTokens, AuthAuditLog)
+- Create Auth DB schema (Users, Roles, UserRoles, RefreshTokens, AuthAuditLog, ExternalLogins)
 - Implement JWT with RSA key pair (sign with private key, export public key)
 - Implement endpoints: Register, Login, Refresh, Logout
+- **Implement Google OAuth 2.0 login** (exchange code, find/create user, account linking)
 - Add role-based claims to JWT (userId, email, roles[])
 - Seed default roles (Admin, StadiumOwner, Organizer, User)
 
@@ -63,11 +64,12 @@
 ### Frontend 1
 
 - Initialize Next.js project (App Router + TypeScript)
-- Build Login and Register pages
+- Build Login and Register pages **with Google Sign-In button**
 - Implement BFF Route Handlers:
     - `app/api/auth/[...slug]/route.ts` → Auth Service
     - `app/api/core/[...slug]/route.ts` → Core Service
 - Set up JWT storage via httpOnly cookies (Next.js middleware)
+- **Implement Google OAuth redirect flow** (redirect to Google, handle callback)
 - Set up SignalR client utility (`lib/signalr.ts`)
 
 ### Frontend 2
@@ -81,8 +83,9 @@
 
 ### Week 1 Milestone
 
-✅ Both services run independently  
-✅ User can register and login  
+✅ Both services run independently via Docker  
+✅ User can register and login (email/password)  
+✅ **User can sign in with Google OAuth**  
 ✅ JWT issued by Auth is validated by Core  
 ✅ Next.js BFF proxy forwards requests  
 ✅ Landing page and auth pages functional (Infrastructure ready optionally via Docker)
@@ -447,7 +450,7 @@
 
 | Dev | Task | Deliverable |
 |-----|------|-------------|
-| **BE1** | Create Auth DB entities: Users, Roles, UserRoles, RefreshTokens, AuthAuditLog + EF Core DbContext + initial migration | Migration runs, tables created |
+| **BE1** | Create Auth DB entities: Users, Roles, UserRoles, RefreshTokens, AuthAuditLog, **ExternalLogins** + EF Core DbContext + initial migration | Migration runs, tables created |
 | **BE2** | Ensure local SQL Server and Redis are accessible (Optionally use Docker) | Databases ready locally |
 | **FE1** | Build Login page UI (form, validation, error states) | Login page renders |
 | **FE2** | Build navigation bar with responsive design + placeholder auth state | Navbar component ready |
@@ -465,7 +468,7 @@
 
 | Dev | Task | Deliverable |
 |-----|------|-------------|
-| **BE1** | Implement Register + Login endpoints, seed default roles (Admin, StadiumOwner, Organizer, User), password hashing | Register/Login return JWT |
+| **BE1** | Implement Register + Login endpoints, seed default roles (Admin, StadiumOwner, Organizer, User), password hashing, **implement Google OAuth 2.0 endpoint** (`/api/auth/google` — exchange code, find/create user, account linking) | Register/Login/Google return JWT |
 | **BE2** | Configure JWT validation on Core Service using Auth's RSA public key, add `[Authorize]` test endpoint | Core rejects invalid tokens |
 | **FE1** | Implement BFF Route Handlers: `app/api/auth/[...slug]/route.ts` and `app/api/core/[...slug]/route.ts` | Proxy forwards requests |
 | **FE2** | Implement role-based route guards (middleware), build dashboard skeleton with sidebar | Protected routes work |
@@ -476,7 +479,7 @@
 |-----|------|-------------|
 | **BE1** | Implement Refresh Token rotation + Logout endpoint + audit logging for login attempts | Token refresh works |
 | **BE2** | Configure Serilog for both services, add health check endpoints, configure Dapper alongside EF Core | Logs visible, health checks respond |
-| **FE1** | Set up JWT storage via httpOnly cookies (middleware), connect Login/Register forms to BFF proxy | End-to-end auth works via browser |
+| **FE1** | Set up JWT storage via httpOnly cookies (middleware), connect Login/Register forms to BFF proxy, **add Google Sign-In button + redirect flow** | End-to-end auth works via browser (email + Google) |
 | **FE2** | Build loading state templates, error boundary components, toast notification system | UX components ready |
 
 ---
