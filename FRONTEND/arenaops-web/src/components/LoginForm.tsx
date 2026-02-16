@@ -83,7 +83,7 @@ export default function LoginForm() {
       ref={containerRef}
       className="w-[70vw] max-w-375 h-130 bg-[#f3f3f3] rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] overflow-hidden grid grid-cols-1 lg:grid-cols-2"
     >
-      <div className="left-panel hidden lg:flex flex-col justify-center items-center bg-gradient-to-br from-blue-400 to-indigo-600 text-white rounded-r-[280px]">
+      <div className="left-panel hidden lg:flex flex-col justify-center items-center bg-linear-to-br from-blue-400 to-indigo-600 text-white rounded-r-[280px]">
         <div className="text-center px-16">
           <h2 className="text-5xl font-bold mb-4">
             Welcome Back!
@@ -101,7 +101,6 @@ export default function LoginForm() {
         </div>
       </div>
 
-      {/* RIGHT PANEL — Exact Same Style as Register */}
       <div className="right-panel flex flex-col justify-center px-20">
         <h2 className="text-4xl font-bold text-gray-800 mb-8">
           Login
@@ -109,7 +108,6 @@ export default function LoginForm() {
 
         <form action={formAction} className="space-y-5">
 
-          {/* Username */}
           <div>
             <input
               name="username"
@@ -125,7 +123,6 @@ export default function LoginForm() {
             )}
           </div>
 
-          {/* Password */}
           <div>
             <input
               name="password"
