@@ -31,3 +31,7 @@ node_modules/
 .env
 .env.local
 .env.*.local
+
+# RSA private keys
+Keys/
+*.key
