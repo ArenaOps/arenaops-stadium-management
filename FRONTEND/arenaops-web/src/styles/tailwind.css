@@ -7,6 +7,10 @@
     --color-background: var(--background);
     --color-foreground: var(--foreground);
 
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+
+
     --color-primary: var(--primary);
     --color-primary-foreground: var(--primary-foreground);
 
@@ -52,6 +56,21 @@
             height: 0;
         }
     }
+
+    --animate-fade-in-up: fade-in-up 0.5s ease-out forwards;
+
+    @keyframes fade-in-up {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
 }
 
 /*
@@ -63,6 +82,11 @@
     :root {
         --background: oklch(0.985 0 0);
         --foreground: oklch(0.141 0.005 285.823);
+
+        /* Card styles */
+        --card: oklch(1 0 0);
+        --card-foreground: oklch(0.141 0.005 285.823);
+
 
         /* Primary: Vibrant Blue/Indigo - Trustworthy & energetic */
         --primary: oklch(0.55 0.2 260);
@@ -97,6 +121,10 @@
     .dark {
         --background: oklch(0.141 0.005 285.823);
         --foreground: oklch(0.985 0 0);
+
+        --card: oklch(0.141 0.005 285.823);
+        --card-foreground: oklch(0.985 0 0);
+
 
         --primary: oklch(0.6 0.2 260);
         --primary-foreground: oklch(0.985 0 0);
