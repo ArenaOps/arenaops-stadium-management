@@ -223,7 +223,7 @@ The system is designed for four primary user groups:
 
 ### Infrastructure
 
-- Docker Compose for local development orchestration
+- Docker Compose (Optional for local development orchestration)
 - Redis for caching and rate limiting
 - Serilog for centralized logging
 
