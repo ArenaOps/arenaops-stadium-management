@@ -67,7 +67,7 @@ ArenaOps is a centralized digital platform that enables:
 | **Core Backend** | ASP.NET Core, C#, EF Core + Dapper + Stored Procedures, SQL Server, SignalR, Redis |
 | **Frontend** | Next.js (App Router), TypeScript, SVG seat rendering, SignalR client |
 | **Payment** | Razorpay / Stripe integration |
-| **Infrastructure** | Docker Compose, Serilog |
+| **Infrastructure** | Serilog (Docker Compose optional) |
 
 ---
 
@@ -87,7 +87,8 @@ ARENAOPS/
 │   ├── 03-Database.md              # Full database schema (Auth + Core)
 │   ├── 04-Api-Documentation.md     # All API endpoints by module
 │   └── 05-Weekly-Plan.md           # 6-week implementation plan
-└── docker-compose.yml              # Local development orchestration
+└── docs/                           # Project documentation
+└── docker-compose.yml.example      # Optional local orchestration
 ```
 
 ---
@@ -155,14 +156,18 @@ Detailed documentation is available in the [`docs/`](docs/) folder:
 ## 🚀 Getting Started (Coming Soon)
 
 ```bash
-# Prerequisites: Docker, Node.js 18+, .NET 8 SDK
+# Prerequisites: Node.js 18+, .NET 8 SDK, SQL Server, Redis
+# (Optional: Docker for simplified infrastructure setup)
 
 # 1. Clone the repo
 git clone https://github.com/ArenaOps/arenaops-stadium-management.git
 cd arenaops-stadium-management
 
-# 2. Start infrastructure (SQL Server + Redis)
-docker-compose up -d
+# 2. Setup Infrastructure (Choose A or B)
+# Option A: Standalone SQL Server & Redis (Manual Install)
+# Option B: Docker (Optional)
+# cp docker-compose.yml.example docker-compose.yml
+# docker-compose up -d
 
 # 3. Run Auth Service
 cd BACKEND/ArenaOps.AuthService/ArenaOps.AuthService.API
