@@ -10,6 +10,8 @@ USERS ────< USER_ROLES >──── ROLES
 USERS ────< REFRESH_TOKENS
 
 USERS ────< AUTH_AUDIT_LOG
+
+USERS ────< EXTERNAL_LOGINS
 ```
 
 ### Core Database (`ArenaOps_CoreDB`)
@@ -68,11 +70,13 @@ BOOKING ─────< PAYMENT
 | --- | --- | --- |
 | UserId | UNIQUEIDENTIFIER | **PK** |
 | Email | NVARCHAR(255) | UNIQUE |
-| PasswordHash | NVARCHAR(500) | |
+| PasswordHash | NVARCHAR(500) | *(NULL if Google-only user)* |
 | FullName | NVARCHAR(200) | |
 | PhoneNumber | NVARCHAR(20) | |
+| ProfilePictureUrl | NVARCHAR(500) | *(From Google profile)* |
+| AuthProvider | NVARCHAR(20) | *(Local, Google, Both)* |
 | IsActive | BIT | |
-| IsEmailVerified | BIT | |
+| IsEmailVerified | BIT | *(Auto-verified for Google users)* |
 | CreatedAt | DATETIME2 | |
 | UpdatedAt | DATETIME2 | |
 
@@ -120,10 +124,27 @@ BOOKING ─────< PAYMENT
 | --- | --- | --- |
 | LogId | UNIQUEIDENTIFIER | **PK** |
 | UserId | UNIQUEIDENTIFIER | **FK → Users(UserId)** |
-| Action | NVARCHAR(50) | *(Login, FailedLogin, RoleChanged, PasswordReset)* |
+| Action | NVARCHAR(50) | *(Login, GoogleLogin, FailedLogin, RoleChanged, PasswordReset)* |
 | IpAddress | NVARCHAR(45) | |
 | UserAgent | NVARCHAR(500) | |
 | CreatedAt | DATETIME2 | |
+
+---
+
+### ExternalLogin (Google OAuth)
+
+| Column | Type | Key |
+| --- | --- | --- |
+| ExternalLoginId | UNIQUEIDENTIFIER | **PK** |
+| UserId | UNIQUEIDENTIFIER | **FK → Users(UserId)** |
+| Provider | NVARCHAR(50) | *(Google)* |
+| ProviderKey | NVARCHAR(200) | *(Google User ID)* |
+| ProviderDisplayName | NVARCHAR(200) | *(Google display name)* |
+| CreatedAt | DATETIME2 | |
+
+**Purpose:** Stores external login provider details. Supports linking multiple providers to one user account. One user can have both email/password AND Google login.
+
+**Composite Unique Index:** `(Provider, ProviderKey)` — ensures one Google account maps to one ArenaOps user.
 
 ---
 

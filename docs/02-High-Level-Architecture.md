@@ -9,6 +9,10 @@
                     │  │ Payment  │  │ Maps /    │  │  Email /  │ │
                     │  │ Gateway  │  │ Geocoding │  │  SMS      │ │
                     │  └────▲─────┘  └─────▲─────┘  └─────▲─────┘ │
+                    │  ┌──────────┐                                │
+                    │  │ Google   │                                │
+                    │  │ OAuth    │                                │
+                    │  └────▲─────┘                                │
                     └───────│──────────────│──────────────│────────┘
                             │              │              │
                             │              │              │
@@ -148,12 +152,55 @@ The Auth Service uses **Entity Framework Core** for all database operations (CRU
 
 #### Responsibilities:
 
-- User registration and login
+- User registration and login (email/password)
+- **Google OAuth 2.0 login** (external provider)
 - JWT token generation with **RSA private key**
 - Refresh token rotation
 - Role management (Admin, Stadium Owner, Organizer, User)
 - Password reset
 - Audit logging (login attempts, role changes)
+
+#### Google OAuth 2.0 Flow:
+
+```
+User                    Frontend (Next.js)              Auth Service           Google
+ │                           │                              │                    │
+ │  Click "Sign in with     │                              │                    │
+ │  Google"                 │                              │                    │
+ │ ────────────────────►    │                              │                    │
+ │                           │  Redirect to Google         │                    │
+ │ ◄─────────────────────── │                              │                    │
+ │  ────────────────────────────────────────────────────────────────────────►   │
+ │                           │                              │    User consents  │
+ │  ◄──────────────────────────────────────────────────────────────────────    │
+ │  (Authorization Code)    │                              │                    │
+ │ ────────────────────►    │                              │                    │
+ │                           │  POST /api/auth/google       │                    │
+ │                           │  { code }                    │                    │
+ │                           │ ───────────────────────────► │                    │
+ │                           │                              │  Exchange code     │
+ │                           │                              │  for Google token  │
+ │                           │                              │ ──────────────►   │
+ │                           │                              │  ◄────────────    │
+ │                           │                              │  (email, name,    │
+ │                           │                              │   googleId)       │
+ │                           │                              │                    │
+ │                           │                              │  Find/Create user  │
+ │                           │                              │  Issue JWT + RT    │
+ │                           │  ◄─────────────────────────  │                    │
+ │                           │  { accessToken, refreshToken }                    │
+ │  ◄────────────────────── │                              │                    │
+ │  Logged in ✅            │                              │                    │
+```
+
+**Account Linking Logic:**
+
+| Scenario | What Happens |
+|----------|--------------|
+| New Google user | Create user with Google email, set role = User, mark email verified |
+| Existing user (same email, no Google linked) | Link Google ID to existing account |
+| Existing user (Google already linked) | Login normally, issue JWT |
+| Google email differs from any existing user | Create new user account |
 
 #### Why a Separate Service?
 

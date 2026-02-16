@@ -28,6 +28,7 @@ The frontend is built with **Next.js (App Router)**, which acts as a Backend-For
 - **Real-time seat status updates** via SignalR
 - Location-based discovery of stadiums and events
 - Role-based access control for Admin, Stadium Owner, Organizer, and Users
+- **Google OAuth 2.0 login** — users can sign in with their Google account alongside email/password
 - Drag-and-drop section positioning for layout customization
 - Seat status visualization and booking workflow management
 
@@ -123,7 +124,16 @@ The system is designed for four primary user groups:
 - Flexible pricing control per section
 - Standing ticket support (capacity-based)
 
-### D. Secure Booking System
+### D. Authentication
+
+- **Email/Password registration and login** — traditional authentication with password hashing
+- **Google OAuth 2.0 login** — one-click sign-in with Google account
+- Automatic account linking — if a user registers with email first, then logs in with Google (same email), the accounts are linked
+- New users signing in via Google get the default "User" role and are auto-verified
+- JWT token generation with RSA key pair (Auth Service signs, Core Service validates)
+- Refresh token rotation for session management
+
+### E. Secure Booking System
 
 - Seat lifecycle: Available → Held → Confirmed
 - Time-bound seat holds
@@ -132,14 +142,14 @@ The system is designed for four primary user groups:
 - Idempotent payment processing with webhook verification
 - **Real-time seat status updates via SignalR** — all users see changes instantly
 
-### E. Location-Based Discovery
+### F. Location-Based Discovery
 
 - Stadiums stored with latitude and longitude
 - User location captured via browser or city input
 - Nearby stadium and event search using distance calculations
 - Map-based event visualization
 
-### F. High-Traffic Handling
+### G. High-Traffic Handling
 
 - Read-write separation (EF Core for writes, Dapper for reads)
 - Seat map caching via Redis
@@ -193,6 +203,7 @@ The system is designed for four primary user groups:
 - SQL Server (dedicated `ArenaOps_AuthDB`)
 - **Entity Framework Core** (CRUD operations)
 - JWT-based Authentication with **RSA Key Pair** (Private key for signing)
+- **Google OAuth 2.0** (external login provider)
 - Refresh Token Rotation
 - Audit Logging
 
