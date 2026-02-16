@@ -1,9 +1,9 @@
-import React from 'react'
+import RegisterForm from "@/components/auth/Registerform";
 
-function page() {
+export default function RegisterPage() {
   return (
-    <div>page</div>
-  )
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#dfe7f5] to-[#c3d0ec]">
+      <RegisterForm />
+    </div>
+  );
 }
-
-export default page
