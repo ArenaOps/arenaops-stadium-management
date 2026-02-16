@@ -1,7 +1,17 @@
+using ArenaOps.AuthService.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+
+// Database — EF Core with SQL Server
+builder.Services.AddDbContext<AuthDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("AuthDb"),
+        sqlOptions => sqlOptions.MigrationsAssembly("ArenaOps.AuthService.Infrastructure")
+    ));
 
 // Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();

@@ -7,7 +7,7 @@
 | Person | Role | Primary Focus |
 | --- | --- | --- |
 | **Backend 1** | Auth Lead | Auth Service setup, JWT RSA, Register/Login |
-| **Backend 2** | Core Lead | Core Service setup, Docker, shared library |
+| **Backend 2** | Core Lead | Core Service setup, SQL Server/Redis configuration (Docker optional), shared library |
 | **Frontend 1** | App Lead | Next.js setup, BFF proxy, Login/Register |
 | **Frontend 2** | UI Lead | Landing page, navigation, auth state, dashboard skeleton |
 
@@ -30,7 +30,7 @@
 - Set up both microservice projects
 - Implement authentication as a standalone service
 - Set up Next.js with BFF proxy
-- Docker Compose for local dev
+- Local SQL Server and Redis configuration (Docker optional)
 
 ## Deliverables
 
@@ -38,7 +38,7 @@
 - Auth Service with JWT (RSA key pair)
 - Core Service skeleton with JWT validation
 - Next.js app with Route Handler proxies
-- Docker Compose running all services
+- SQL Server and Redis databases prepared locally (Docker possible)
 
 ### Backend 1
 
@@ -54,7 +54,7 @@
 - Set up `ArenaOps.CoreService` with Clean Architecture
 - Create Core DB schema (Stadium, SeatingPlan, Section, Seat, Landmark)
 - Configure JWT validation using Auth's RSA public key
-- Set up Docker Compose (SQL Server, Redis, Auth, Core containers)
+- Configure local SQL Server and Redis connections
 - Configure Serilog for both services
 - Create `ArenaOps.Shared` library (common DTOs, constants, response wrapper)
 - Set up health check endpoints for both services
@@ -81,11 +81,11 @@
 
 ### Week 1 Milestone
 
-✅ Both services run independently via Docker  
+✅ Both services run independently  
 ✅ User can register and login  
 ✅ JWT issued by Auth is validated by Core  
 ✅ Next.js BFF proxy forwards requests  
-✅ Landing page and auth pages functional
+✅ Landing page and auth pages functional (Infrastructure ready optionally via Docker)
 
 ---
 
@@ -367,7 +367,7 @@
 
 ### DevOps
 
-- Finalize Docker Compose
+- Finalize environment configurations (including optional Docker setup)
 - Environment-specific configs
 - Swagger/OpenAPI docs for both services
 - README with setup instructions
@@ -448,7 +448,7 @@
 | Dev | Task | Deliverable |
 |-----|------|-------------|
 | **BE1** | Create Auth DB entities: Users, Roles, UserRoles, RefreshTokens, AuthAuditLog + EF Core DbContext + initial migration | Migration runs, tables created |
-| **BE2** | Set up Docker Compose: SQL Server container + Redis container + Docker network | `docker-compose up` starts DB + Redis |
+| **BE2** | Ensure local SQL Server and Redis are accessible (Optionally use Docker) | Databases ready locally |
 | **FE1** | Build Login page UI (form, validation, error states) | Login page renders |
 | **FE2** | Build navigation bar with responsive design + placeholder auth state | Navbar component ready |
 
@@ -739,7 +739,7 @@
 
 | Dev | Task | Deliverable |
 |-----|------|-------------|
-| **BE1** | Finalize Docker Compose: all services, environment-specific configs, volume mounts | Docker Compose final |
+| **BE1** | Finalize environment setup: all services, environment-specific configs | Local environment final |
 | **BE2** | Generate Swagger/OpenAPI docs for Auth Service | Auth Swagger ready |
 | **BE3** | Generate Swagger/OpenAPI docs for Core Service | Core Swagger ready |
 | **FE1** | Responsive design pass: test all pages on mobile, tablet, desktop breakpoints | Responsive complete |
@@ -751,6 +751,6 @@
 |-----|------|-------------|
 | **BE1** | Final verification: run all success criteria (SC-1 through SC-9) and document results | All SCs validated |
 | **BE2** | Write setup guide README: prerequisites, Docker setup, seed data, first-run instructions | README complete |
-| **BE3** | Final environment cleanup: remove hardcoded secrets, use env vars, test clean `docker-compose up` | Clean deployment works (SC-5) |
+| **BE3** | Final environment cleanup: remove hardcoded secrets, use env vars, test fresh startup | Clean deployment works (SC-5) |
 | **FE1** | Final E2E walkthrough in browser: complete user journey, screenshot key flows | E2E documented |
 | **FE2** | Final UI polish: add micro-animations, transitions, empty states, 404 page | UI polish complete |
