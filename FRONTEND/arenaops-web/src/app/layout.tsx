@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google"; // Modern fonts
 import "@/styles/tailwind.css";
 import "@/styles/globals.scss";
+import Providers from "../providers/providers";
 
 // Primary font for body text
 const inter = Inter({
@@ -32,7 +33,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${outfit.variable} font-sans antialiased bg-background text-foreground`}
       >
+        <Providers>
         {children}
+        </Providers>
       </body>
     </html>
   );
