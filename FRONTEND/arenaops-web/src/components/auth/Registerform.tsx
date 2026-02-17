@@ -3,19 +3,16 @@
 import {
   useRef,
   useLayoutEffect,
-  useActionState,
   useState,
   useEffect,
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/app/store/store";
-import {
-  loginStart,
-  loginSuccess,
-} from "@/app/store/authSlice";
+import { registerUser } from "@/app/store/authSlice";
+import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import Link from "next/link";
-import { Eye, EyeOff, UserCircle, Mail, Lock, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, UserCircle, Mail, Lock, ShieldCheck, Chrome, Github, Twitter } from "lucide-react";
 
 interface FormState {
   errors: {
@@ -25,19 +22,22 @@ interface FormState {
   };
 }
 
-const initialState: FormState = {
-  errors: {},
-};
-
 export default function RegisterForm() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const dispatch = useDispatch();
-  const { loading } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch<any>();
+  const router = useRouter();
+  const { loading, isAuthenticated, error } = useSelector((state: RootState) => state.auth);
 
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [formErrors, setFormErrors] = useState<FormState["errors"]>({});
+
+  // Redirect if authenticated
+  if (isAuthenticated) {
+    router.push("/");
+  }
 
   useEffect(() => {
     const savedName = localStorage.getItem("reg_name");
@@ -83,28 +83,41 @@ export default function RegisterForm() {
     return () => ctx.revert();
   }, []);
 
-  const [state, formAction] = useActionState(
-    async (prevState: FormState) => {
-      const errors: FormState["errors"] = {};
+  const handleGoogleLogin = () => {
+    // Replace with your actual Google Client ID from Google Cloud Console
+    const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
+    const redirectUri = window.location.origin + "/auth/callback"; // http://localhost:3000/auth/callback
+    const scope = "email profile";
+    const responseType = "code";
 
-      if (!name) errors.name = "Full name required for roster";
-      if (!email) errors.email = "Active email required for verification";
-      if (!password || password.length < 6)
-        errors.password = "Clearance password too weak (min 6 chars)";
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=${responseType}&scope=${encodeURIComponent(scope)}`;
 
-      if (Object.keys(errors).length > 0) return { errors };
+    window.location.href = authUrl;
+  };
 
-      dispatch(loginStart());
-      await new Promise((res) => setTimeout(res, 1000));
-      dispatch(loginSuccess(name));
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const errors: FormState["errors"] = {};
 
+    if (!name) errors.name = "Full name required for roster";
+    if (!email) errors.email = "Active email required for verification";
+    if (!password || password.length < 6)
+      errors.password = "Clearance password too weak (min 6 chars)";
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    setFormErrors({});
+
+    const result = await dispatch(registerUser({ email, password, fullName: name }));
+
+    if (registerUser.fulfilled.match(result)) {
       localStorage.removeItem("reg_name");
       localStorage.removeItem("reg_email");
-
-      return { errors: {} };
-    },
-    initialState
-  );
+      router.push("/");
+    }
+  };
 
   return (
     <div
@@ -118,24 +131,23 @@ export default function RegisterForm() {
           </h2>
           <p className="text-gray-500 text-xs font-bold uppercase tracking-[0.2em] flex items-center gap-2">
             <ShieldCheck size={14} className="text-[#10b981]" />
-            Join the ArenaOps Roster
+            Join the ArenaOps
           </p>
         </div>
 
-        <form action={formAction} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="input-group relative">
             <UserCircle className="absolute left-4 top-4 text-gray-600" size={18} />
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="FULL NAME"
-              className={`w-full pl-12 pr-5 py-4 rounded-xl bg-[#111827] text-white border border-white/5 outline-none focus:border-[#10b981] transition-all text-xs font-bold tracking-widest placeholder:text-gray-600 ${
-                state.errors.name ? "border-red-500/50 ring-1 ring-red-500/20" : ""
-              }`}
+              className={`w-full pl-12 pr-5 py-4 rounded-xl bg-[#111827] text-white border border-white/5 outline-none focus:border-[#10b981] transition-all text-xs font-bold tracking-widest placeholder:text-gray-600 ${formErrors.name ? "border-red-500/50 ring-1 ring-red-500/20" : ""
+                }`}
             />
-            {state.errors.name && (
+            {formErrors.name && (
               <p className="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-tighter italic">
-                {state.errors.name}
+                {formErrors.name}
               </p>
             )}
           </div>
@@ -147,13 +159,12 @@ export default function RegisterForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="EMAIL ADDRESS"
-              className={`w-full pl-12 pr-5 py-4 rounded-xl bg-[#111827] text-white border border-white/5 outline-none focus:border-[#10b981] transition-all text-xs font-bold tracking-widest placeholder:text-gray-600 ${
-                state.errors.email ? "border-red-500/50 ring-1 ring-red-500/20" : ""
-              }`}
+              className={`w-full pl-12 pr-5 py-4 rounded-xl bg-[#111827] text-white border border-white/5 outline-none focus:border-[#10b981] transition-all text-xs font-bold tracking-widest placeholder:text-gray-600 ${formErrors.email ? "border-red-500/50 ring-1 ring-red-500/20" : ""
+                }`}
             />
-            {state.errors.email && (
+            {formErrors.email && (
               <p className="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-tighter italic">
-                {state.errors.email}
+                {formErrors.email}
               </p>
             )}
           </div>
@@ -165,9 +176,8 @@ export default function RegisterForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="CLEARANCE PASSWORD"
-              className={`w-full pl-12 pr-14 py-4 rounded-xl bg-[#111827] text-white border border-white/5 outline-none focus:border-[#10b981] transition-all text-xs font-bold tracking-widest placeholder:text-gray-600 ${
-                state.errors.password ? "border-red-500/50 ring-1 ring-red-500/20" : ""
-              }`}
+              className={`w-full pl-12 pr-14 py-4 rounded-xl bg-[#111827] text-white border border-white/5 outline-none focus:border-[#10b981] transition-all text-xs font-bold tracking-widest placeholder:text-gray-600 ${formErrors.password ? "border-red-500/50 ring-1 ring-red-500/20" : ""
+                }`}
             />
             <button
               type="button"
@@ -176,26 +186,52 @@ export default function RegisterForm() {
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
-            {state.errors.password && (
+            {formErrors.password && (
               <p className="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-tighter italic">
-                {state.errors.password}
+                {formErrors.password}
               </p>
             )}
           </div>
 
+          {error && (
+            <p className="bg-red-500/10 border border-red-500/50 text-red-500 p-3 rounded-lg text-[10px] font-bold uppercase text-center">
+              {error}
+            </p>
+          )}
+
           <button
             type="submit"
             disabled={loading}
-            className="input-group w-full py-4 mt-4 rounded-xl bg-white text-black font-black uppercase tracking-widest shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:bg-[#10b981] hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] transition-all disabled:opacity-50"
+            className=" w-full py-4 mt-4 rounded-xl bg-white text-black font-black uppercase tracking-widest shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:bg-[#10b981] hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] transition-all disabled:opacity-50"
           >
             {loading ? "Registering Scout..." : "Complete Registration"}
           </button>
         </form>
+
+        <div className="text-center mt-10 text-gray-600 text-[10px] font-bold uppercase tracking-[0.3em] mb-4">
+          External Networks
+        </div>
+
+        <div className="flex justify-center gap-4">
+          {[
+            { icon: <Chrome size={18} />, label: "G", action: handleGoogleLogin },
+            { icon: <Github size={18} />, label: "Git", action: () => { } },
+            { icon: <Twitter size={18} />, label: "X", action: () => { } },
+          ].map((item, i) => (
+            <div
+              key={i}
+              onClick={item.action}
+              className="w-12 h-12 flex items-center justify-center bg-[#111827] border border-white/5 rounded-full text-white hover:text-[#10b981] hover:border-[#10b981]/50 transition-all cursor-pointer shadow-lg"
+            >
+              {item.icon}
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="emerald-panel hidden lg:flex flex-col justify-center items-center bg-[#10b981] text-black rounded-l-[150px] relative overflow-hidden order-1 lg:order-2">
         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
-        
+
         <div className="text-center px-16 relative z-10">
           <h2 className="text-6xl font-black italic tracking-tighter mb-4 uppercase leading-none">
             Join The <br /> League.
