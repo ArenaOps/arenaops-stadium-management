@@ -30,6 +30,9 @@ builder.Services.AddScoped<IAuthService, ArenaOps.AuthService.Infrastructure.Ser
 // Email Service (Mock — logs to console)
 builder.Services.AddSingleton<IEmailService, MockEmailService>();
 
+// Token Blacklist (in-memory — for immediate JWT invalidation on logout)
+builder.Services.AddSingleton<ITokenBlacklistService, InMemoryTokenBlacklistService>();
+
 // Google OAuth
 builder.Services.Configure<GoogleAuthSettings>(builder.Configuration.GetSection("GoogleAuth"));
 builder.Services.AddHttpClient<IGoogleAuthService, GoogleAuthService>();
@@ -124,6 +127,10 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
+
+// Token blacklist check — must be AFTER authentication, BEFORE authorization
+app.UseMiddleware<ArenaOps.AuthService.API.Middleware.TokenBlacklistMiddleware>();
+
 app.UseAuthorization();
 
 app.MapControllers();

@@ -186,7 +186,8 @@ public class AuthService : IAuthService
         if (storedToken == null)
             return;
 
-        storedToken.RevokedAt = DateTime.UtcNow;
+        // Remove the token from the database entirely
+        _db.RefreshTokens.Remove(storedToken);
         await _db.SaveChangesAsync();
     }
 

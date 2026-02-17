@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
 using ArenaOps.AuthService.Core.DTOs;
 using ArenaOps.AuthService.Core.Interfaces;
@@ -16,12 +17,18 @@ public class AuthController : ControllerBase
     private readonly ITokenService _tokenService;
     private readonly IAuthService _authService;
     private readonly IGoogleAuthService _googleAuthService;
+    private readonly ITokenBlacklistService _tokenBlacklist;
 
-    public AuthController(ITokenService tokenService, IAuthService authService, IGoogleAuthService googleAuthService)
+    public AuthController(
+        ITokenService tokenService,
+        IAuthService authService,
+        IGoogleAuthService googleAuthService,
+        ITokenBlacklistService tokenBlacklist)
     {
         _tokenService = tokenService;
         _authService = authService;
         _googleAuthService = googleAuthService;
+        _tokenBlacklist = tokenBlacklist;
     }
 
     /// <summary>
@@ -72,7 +79,8 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Logout by revoking a refresh token.
+    /// Logout — blacklists the current access token and deletes the refresh token from DB.
+    /// After logout, the access token is IMMEDIATELY invalid (won't work even before expiry).
     /// </summary>
     [HttpPost("logout")]
     [Authorize]
@@ -80,6 +88,17 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Logout([FromBody] RefreshRequest request)
     {
+        // Blacklist the current access token so it stops working immediately
+        var jti = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+        var expClaim = User.FindFirst(JwtRegisteredClaimNames.Exp)?.Value;
+
+        if (!string.IsNullOrEmpty(jti) && !string.IsNullOrEmpty(expClaim))
+        {
+            var expiresAt = DateTimeOffset.FromUnixTimeSeconds(long.Parse(expClaim)).UtcDateTime;
+            _tokenBlacklist.BlacklistToken(jti, expiresAt);
+        }
+
+        // Delete refresh token from DB
         await _authService.LogoutAsync(request.RefreshToken);
         return Ok(ApiResponse<object>.Ok(new { }, "Logged out successfully"));
     }
