@@ -7,7 +7,8 @@ import { loginUser } from "@/app/store/authSlice";
 import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import Link from "next/link";
-import { Github, Chrome, Twitter } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
+import { GoogleIcon } from "@/components/icons/GoogleIcon";
 
 interface FormState {
   errors: {
@@ -24,6 +25,7 @@ export default function LoginForm() {
 
   // Local state for form errors since we are moving away from useActionState for simplicity with Thunks
   const [formErrors, setFormErrors] = useState<FormState["errors"]>({});
+  const [showPassword, setShowPassword] = useState(false);
 
   // Redirect if authenticated
   if (isAuthenticated) {
@@ -84,6 +86,19 @@ export default function LoginForm() {
     }
   };
 
+  const handleGoogleLogin = () => {
+    const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
+    const redirectUri = window.location.origin + "/auth/callback";
+    const scope = "openid email profile";
+    const responseType = "code";
+    const accessType = "offline";
+    const prompt = "consent";
+
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=${responseType}&scope=${encodeURIComponent(scope)}&access_type=${accessType}&prompt=${prompt}`;
+
+    window.location.href = authUrl;
+  };
+
   return (
     <div
       ref={containerRef}
@@ -122,6 +137,9 @@ export default function LoginForm() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="input-field">
+            <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+              Email Address / ID
+            </label>
             <input
               name="email"
               type="email"
@@ -137,13 +155,25 @@ export default function LoginForm() {
           </div>
 
           <div className="input-field">
-            <input
-              name="password"
-              type="password"
-              placeholder="CLEARANCE PASSWORD"
-              className={`w-full px-5 py-4 rounded-xl bg-[#111827] text-white border border-white/5 outline-none focus:border-[#10b981] transition-all text-xs font-bold tracking-widest placeholder:text-gray-600 ${formErrors.password ? "border-red-500/50 ring-1 ring-red-500/20" : ""
-                }`}
-            />
+            <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="CLEARANCE PASSWORD"
+                className={`w-full px-5 py-4 rounded-xl bg-[#111827] text-white border border-white/5 outline-none focus:border-[#10b981] transition-all text-xs font-bold tracking-widest placeholder:text-gray-600 ${formErrors.password ? "border-red-500/50 ring-1 ring-red-500/20" : ""
+                  }`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#10b981] transition"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
             {formErrors.password && (
               <p className="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-tighter">
                 {formErrors.password}
@@ -171,22 +201,17 @@ export default function LoginForm() {
         </form>
 
         <div className="text-center mt-10 text-gray-600 text-[10px] font-bold uppercase tracking-[0.3em] mb-4">
-          External Networks
+          Or Continue With
         </div>
 
-        <div className="flex justify-center gap-4">
-          {[
-            { icon: <Chrome size={18} />, label: "G" },
-            { icon: <Github size={18} />, label: "Git" },
-            { icon: <Twitter size={18} />, label: "X" },
-          ].map((item, i) => (
-            <div
-              key={i}
-              className="w-12 h-12 flex items-center justify-center bg-[#111827] border border-white/5 rounded-full text-white hover:text-[#10b981] hover:border-[#10b981]/50 transition-all cursor-pointer shadow-lg"
-            >
-              {item.icon}
-            </div>
-          ))}
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            className="w-12 h-12 flex items-center justify-center bg-[#111827] border border-white/5 rounded-full text-white hover:text-[#10b981] hover:border-[#10b981]/50 transition-all cursor-pointer shadow-lg hover:scale-110 active:scale-95"
+          >
+            <GoogleIcon size={20} />
+          </button>
         </div>
       </div>
     </div>
