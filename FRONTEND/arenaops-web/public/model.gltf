@@ -1,0 +1,19 @@
+{
+  "asset": {
+    "version": "2.0"
+  },
+  "scenes": [
+    {
+      "nodes": [0]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Placeholder",
+      "rotation": [0, 0, 0, 1],
+      "scale": [1, 1, 1],
+      "translation": [0, 0, 0]
+    }
+  ],
+  "scene": 0
+}

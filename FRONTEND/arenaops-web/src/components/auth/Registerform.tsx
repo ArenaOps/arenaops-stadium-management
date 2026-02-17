@@ -12,11 +12,10 @@ import { RootState } from "@/app/store/store";
 import {
   loginStart,
   loginSuccess,
-  loginFailure,
 } from "@/app/store/authSlice";
 import gsap from "gsap";
 import Link from "next/link";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, UserCircle, Mail, Lock, ShieldCheck } from "lucide-react";
 
 interface FormState {
   errors: {
@@ -36,22 +35,17 @@ export default function RegisterForm() {
   const { loading } = useSelector((state: RootState) => state.auth);
 
   const [showPassword, setShowPassword] = useState(false);
-
-  // ✅ Controlled Input States
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // ✅ Load saved data on mount
   useEffect(() => {
     const savedName = localStorage.getItem("reg_name");
     const savedEmail = localStorage.getItem("reg_email");
-
     if (savedName) setName(savedName);
     if (savedEmail) setEmail(savedEmail);
   }, []);
 
-  // ✅ Save to localStorage whenever value changes
   useEffect(() => {
     localStorage.setItem("reg_name", name);
   }, [name]);
@@ -60,21 +54,29 @@ export default function RegisterForm() {
     localStorage.setItem("reg_email", email);
   }, [email]);
 
-  // GSAP Animation
+  // GSAP Entrance Animation
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
       gsap.from(".form-panel", {
-        x: -150,
+        x: -80,
         opacity: 0,
-        duration: 1,
-        ease: "power3.out",
+        duration: 0.8,
+        ease: "expo.out",
       });
 
-      gsap.from(".blue-panel", {
-        x: 150,
+      gsap.from(".emerald-panel", {
+        x: 80,
         opacity: 0,
-        duration: 1,
-        ease: "power3.out",
+        duration: 0.8,
+        ease: "expo.out",
+      });
+
+      gsap.from(".input-group", {
+        y: 20,
+        opacity: 0,
+        stagger: 0.1,
+        duration: 0.4,
+        delay: 0.3,
       });
     }, containerRef);
 
@@ -85,21 +87,17 @@ export default function RegisterForm() {
     async (prevState: FormState) => {
       const errors: FormState["errors"] = {};
 
-      if (!name) errors.name = "Name is required";
-      if (!email) errors.email = "Email is required";
+      if (!name) errors.name = "Full name required for roster";
+      if (!email) errors.email = "Active email required for verification";
       if (!password || password.length < 6)
-        errors.password = "Password must be at least 6 characters";
+        errors.password = "Clearance password too weak (min 6 chars)";
 
-      if (Object.keys(errors).length > 0) {
-        return { errors };
-      }
+      if (Object.keys(errors).length > 0) return { errors };
 
       dispatch(loginStart());
       await new Promise((res) => setTimeout(res, 1000));
-
       dispatch(loginSuccess(name));
 
-      // Optional: Clear storage after success
       localStorage.removeItem("reg_name");
       localStorage.removeItem("reg_email");
 
@@ -111,72 +109,75 @@ export default function RegisterForm() {
   return (
     <div
       ref={containerRef}
-      className="w-[70vw] max-w-[1500px] h-[520px] bg-[#f3f3f3] rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] overflow-hidden grid grid-cols-1 lg:grid-cols-2"
+      className="w-[85vw] max-w-250 min-h-125 bg-[#050505] rounded-[2.5rem] shadow-[0_0_80px_rgba(16,185,129,0.1)] overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-white/5"
     >
-      {/* LEFT SIDE — FORM */}
-      <div className="form-panel flex flex-col justify-center px-20 order-2 lg:order-1">
-        <h2 className="text-4xl font-bold text-gray-800 mb-8">
-          Register
-        </h2>
+      <div className="form-panel flex flex-col justify-center px-12 lg:px-20 py-12 order-2 lg:order-1 bg-[#0a0a0a]">
+        <div className="mb-10">
+          <h2 className="text-5xl font-black text-white italic tracking-tighter uppercase mb-2">
+            Register<span className="text-[#10b981]">.</span>
+          </h2>
+          <p className="text-gray-500 text-xs font-bold uppercase tracking-[0.2em] flex items-center gap-2">
+            <ShieldCheck size={14} className="text-[#10b981]" />
+            Join the ArenaOps Roster
+          </p>
+        </div>
 
-        <form action={formAction} className="space-y-5">
-          {/* Name */}
-          <div>
+        <form action={formAction} className="space-y-4">
+          <div className="input-group relative">
+            <UserCircle className="absolute left-4 top-4 text-gray-600" size={18} />
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Full Name"
-              className={`w-full px-5 py-3 rounded-xl bg-[#e9e9e9] shadow-inner outline-none ${
-                state.errors.name ? "ring-2 ring-red-400" : ""
+              placeholder="FULL NAME"
+              className={`w-full pl-12 pr-5 py-4 rounded-xl bg-[#111827] text-white border border-white/5 outline-none focus:border-[#10b981] transition-all text-xs font-bold tracking-widest placeholder:text-gray-600 ${
+                state.errors.name ? "border-red-500/50 ring-1 ring-red-500/20" : ""
               }`}
             />
             {state.errors.name && (
-              <p className="text-red-500 text-sm mt-1">
+              <p className="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-tighter italic">
                 {state.errors.name}
               </p>
             )}
           </div>
 
-          {/* Email */}
-          <div>
+          <div className="input-group relative">
+            <Mail className="absolute left-4 top-4 text-gray-600" size={18} />
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              className={`w-full px-5 py-3 rounded-xl bg-[#e9e9e9] shadow-inner outline-none ${
-                state.errors.email ? "ring-2 ring-red-400" : ""
+              placeholder="EMAIL ADDRESS"
+              className={`w-full pl-12 pr-5 py-4 rounded-xl bg-[#111827] text-white border border-white/5 outline-none focus:border-[#10b981] transition-all text-xs font-bold tracking-widest placeholder:text-gray-600 ${
+                state.errors.email ? "border-red-500/50 ring-1 ring-red-500/20" : ""
               }`}
             />
             {state.errors.email && (
-              <p className="text-red-500 text-sm mt-1">
+              <p className="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-tighter italic">
                 {state.errors.email}
               </p>
             )}
           </div>
 
-          {/* Password */}
-          <div className="relative">
+          <div className="input-group relative">
+            <Lock className="absolute left-4 top-4 text-gray-600" size={18} />
             <input
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              className={`w-full px-5 py-3 rounded-xl bg-[#e9e9e9] shadow-inner outline-none pr-12 ${
-                state.errors.password ? "ring-2 ring-red-400" : ""
+              placeholder="CLEARANCE PASSWORD"
+              className={`w-full pl-12 pr-14 py-4 rounded-xl bg-[#111827] text-white border border-white/5 outline-none focus:border-[#10b981] transition-all text-xs font-bold tracking-widest placeholder:text-gray-600 ${
+                state.errors.password ? "border-red-500/50 ring-1 ring-red-500/20" : ""
               }`}
             />
-
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-3 text-gray-500 hover:text-blue-600 transition"
+              className="absolute right-4 top-4 text-gray-500 hover:text-[#10b981] transition"
             >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
-
             {state.errors.password && (
-              <p className="text-red-500 text-sm mt-1">
+              <p className="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-tighter italic">
                 {state.errors.password}
               </p>
             )}
@@ -185,30 +186,32 @@ export default function RegisterForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-400 to-indigo-600 text-white font-semibold shadow-md hover:scale-[1.02] transition disabled:opacity-50"
+            className="input-group w-full py-4 mt-4 rounded-xl bg-white text-black font-black uppercase tracking-widest shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:bg-[#10b981] hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] transition-all disabled:opacity-50"
           >
-            {loading ? "Registering..." : "Register"}
+            {loading ? "Registering Scout..." : "Complete Registration"}
           </button>
         </form>
       </div>
 
-      {/* RIGHT SIDE — BLUE PANEL */}
-      <div className="blue-panel hidden lg:flex flex-col justify-center items-center bg-gradient-to-br from-blue-400 to-indigo-600 text-white rounded-l-[280px] order-1 lg:order-2">
-        <div className="text-center px-16">
-          <h2 className="text-5xl font-bold mb-4">
-            Join Us!
+      <div className="emerald-panel hidden lg:flex flex-col justify-center items-center bg-[#10b981] text-black rounded-l-[150px] relative overflow-hidden order-1 lg:order-2">
+        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
+        
+        <div className="text-center px-16 relative z-10">
+          <h2 className="text-6xl font-black italic tracking-tighter mb-4 uppercase leading-none">
+            Join The <br /> League.
           </h2>
-          <p className="mb-6 text-lg opacity-90">
-            Already have an account?
+          <p className="mb-8 text-sm font-bold uppercase tracking-[0.2em] opacity-80">
+            Already have a Scout ID?
           </p>
 
           <Link
             href="/login"
-            className="px-8 py-3 border border-white rounded-lg hover:bg-white hover:text-blue-600 transition"
+            className="px-12 py-4 bg-black text-white font-black rounded-full hover:scale-105 transition-transform inline-block uppercase text-xs tracking-[0.2em]"
           >
-            Login
+            Login Here
           </Link>
         </div>
+
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import "@/styles/tailwind.css";
 import "@/styles/globals.scss";
 import Providers from "../providers/providers";
 import Navbar from "@/components/navfooter/Navbar";
+import Footer from "@/components/navfooter/Footer";
 
 // Primary font for body text
 const inter = Inter({
@@ -38,6 +39,7 @@ export default function RootLayout({
         <Providers>
         {children}
         </Providers>
+        <Footer/>
       </body>
     </html>
   );
