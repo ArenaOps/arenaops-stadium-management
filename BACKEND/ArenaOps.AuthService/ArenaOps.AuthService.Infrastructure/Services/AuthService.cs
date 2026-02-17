@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using ArenaOps.AuthService.Core.DTOs;
 using ArenaOps.AuthService.Core.Entities;
 using ArenaOps.AuthService.Core.Exceptions;
@@ -13,12 +14,18 @@ public class AuthService : IAuthService
 {
     private readonly AuthDbContext _db;
     private readonly ITokenService _tokenService;
+    private readonly IEmailService _emailService;
     private readonly JwtSettings _jwtSettings;
 
-    public AuthService(AuthDbContext db, ITokenService tokenService, IOptions<JwtSettings> jwtSettings)
+    public AuthService(
+        AuthDbContext db,
+        ITokenService tokenService,
+        IEmailService emailService,
+        IOptions<JwtSettings> jwtSettings)
     {
         _db = db;
         _tokenService = tokenService;
+        _emailService = emailService;
         _jwtSettings = jwtSettings.Value;
     }
 
@@ -42,14 +49,12 @@ public class AuthService : IAuthService
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
 
-        var roleName = request.Role ?? "User";
-        var role = await _db.Roles.FirstOrDefaultAsync(r => r.Name == roleName)
-            ?? throw new BadRequestException("INVALID_ROLE", "The specified role does not exist.");
-
+        // SECURITY: Always assign "User" role — ignoring client-side role request
+        var role = await _db.Roles.FirstAsync(r => r.Name == "User");
         _db.UserRoles.Add(new UserRole { UserId = user.UserId, RoleId = role.RoleId });
         await _db.SaveChangesAsync();
 
-        var roles = new List<string> { roleName };
+        var roles = new List<string> { "User" };
         var tokenResult = _tokenService.GenerateTokens(user, roles);
 
         _db.RefreshTokens.Add(new RefreshToken
@@ -185,6 +190,62 @@ public class AuthService : IAuthService
         await _db.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Admin-only: Creates a Stadium Manager (StadiumOwner role) with a generated temporary password.
+    /// Sends the credentials via IEmailService.
+    /// </summary>
+    public async Task<CreateStadiumManagerResponse> CreateStadiumManagerAsync(
+        CreateStadiumManagerRequest request, string? ipAddress, string? userAgent)
+    {
+        if (await _db.Users.AnyAsync(u => u.Email == request.Email))
+            throw new ConflictException("EMAIL_EXISTS", "An account with this email already exists.");
+
+        // Generate a secure temporary password
+        var tempPassword = GenerateTemporaryPassword();
+        var passwordHash = BCrypt.Net.BCrypt.HashPassword(tempPassword);
+
+        var user = new User
+        {
+            Email = request.Email,
+            PasswordHash = passwordHash,
+            FullName = request.FullName,
+            PhoneNumber = request.PhoneNumber,
+            AuthProvider = "Local",
+            IsEmailVerified = false,
+            IsActive = true
+        };
+
+        _db.Users.Add(user);
+        await _db.SaveChangesAsync();
+
+        // Assign StadiumOwner role
+        var role = await _db.Roles.FirstAsync(r => r.Name == "StadiumOwner");
+        _db.UserRoles.Add(new UserRole { UserId = user.UserId, RoleId = role.RoleId });
+
+        // Audit log
+        _db.AuthAuditLogs.Add(new AuthAuditLog
+        {
+            UserId = user.UserId,
+            Action = "StadiumManagerCreated",
+            IpAddress = ipAddress,
+            UserAgent = userAgent
+        });
+
+        await _db.SaveChangesAsync();
+
+        // Send credentials via email (mock for now)
+        await _emailService.SendStadiumManagerCredentialsAsync(request.Email, request.FullName, tempPassword);
+
+        return new CreateStadiumManagerResponse
+        {
+            UserId = user.UserId,
+            Email = user.Email,
+            FullName = user.FullName,
+            Role = "StadiumOwner",
+            Message = "Stadium Manager account created. Temporary password sent to their email."
+        };
+    }
+
     private async Task AuditFailedLoginAsync(string email, string? ipAddress, string? userAgent, Guid? userId = null)
     {
         _db.AuthAuditLogs.Add(new AuthAuditLog
@@ -195,5 +256,43 @@ public class AuthService : IAuthService
             UserAgent = userAgent
         });
         await _db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Generates a secure temporary password: 12 chars with uppercase, lowercase, digit, and special char.
+    /// </summary>
+    private static string GenerateTemporaryPassword()
+    {
+        const string uppercase = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+        const string lowercase = "abcdefghjkmnpqrstuvwxyz";
+        const string digits = "23456789";
+        const string special = "!@#$%&*";
+        const string allChars = uppercase + lowercase + digits + special;
+
+        var password = new char[12];
+        var rng = RandomNumberGenerator.Create();
+        var bytes = new byte[12];
+        rng.GetBytes(bytes);
+
+        // Ensure at least one of each type
+        password[0] = uppercase[bytes[0] % uppercase.Length];
+        password[1] = lowercase[bytes[1] % lowercase.Length];
+        password[2] = digits[bytes[2] % digits.Length];
+        password[3] = special[bytes[3] % special.Length];
+
+        // Fill remaining with random chars
+        for (int i = 4; i < 12; i++)
+            password[i] = allChars[bytes[i] % allChars.Length];
+
+        // Shuffle using Fisher-Yates
+        var shuffleBytes = new byte[12];
+        rng.GetBytes(shuffleBytes);
+        for (int i = password.Length - 1; i > 0; i--)
+        {
+            int j = shuffleBytes[i] % (i + 1);
+            (password[i], password[j]) = (password[j], password[i]);
+        }
+
+        return new string(password);
     }
 }

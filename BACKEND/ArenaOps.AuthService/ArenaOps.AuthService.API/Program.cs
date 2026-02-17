@@ -6,6 +6,7 @@ using ArenaOps.AuthService.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +26,9 @@ builder.Services.AddSingleton<ITokenService, TokenService>();
 
 // Auth Service
 builder.Services.AddScoped<IAuthService, ArenaOps.AuthService.Infrastructure.Services.AuthService>();
+
+// Email Service (Mock — logs to console)
+builder.Services.AddSingleton<IEmailService, MockEmailService>();
 
 // Google OAuth
 builder.Services.Configure<GoogleAuthSettings>(builder.Configuration.GetSection("GoogleAuth"));
@@ -61,15 +65,44 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Swagger/OpenAPI
+// Swagger/OpenAPI with JWT Bearer support
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    options.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "ArenaOps Auth Service",
         Version = "v1",
-        Description = "Authentication & Authorization microservice for the ArenaOps platform"
+        Description = "Authentication & Authorization microservice for the ArenaOps platform.\n\n" +
+                      "**Authentication:** Use the Authorize button (🔒) to add your JWT token.\n" +
+                      "**Format:** `Bearer <your-token>`"
+    });
+
+    // Add JWT Bearer security definition
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter your JWT token.\n\nExample: `eyJhbGciOiJSUzI1NiIs...`"
+    });
+
+    // Apply Bearer token globally — endpoints with [Authorize] will show 🔒
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
     });
 });
 

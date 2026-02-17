@@ -10,6 +10,7 @@ namespace ArenaOps.AuthService.API.Controllers;
 
 [ApiController]
 [Route("api/auth")]
+[Produces("application/json")]
 public class AuthController : ControllerBase
 {
     private readonly ITokenService _tokenService;
@@ -25,9 +26,13 @@ public class AuthController : ControllerBase
 
     /// <summary>
     /// Register a new user with email/password.
+    /// Role is always set to "User" — ignoring client-side role requests for security.
     /// </summary>
     [HttpPost("register")]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<AuthResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
@@ -42,6 +47,8 @@ public class AuthController : ControllerBase
     /// </summary>
     [HttpPost("login")]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<AuthResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
@@ -56,6 +63,8 @@ public class AuthController : ControllerBase
     /// </summary>
     [HttpPost("refresh")]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<AuthResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
     {
         var result = await _authService.RefreshTokenAsync(request.RefreshToken);
@@ -67,6 +76,8 @@ public class AuthController : ControllerBase
     /// </summary>
     [HttpPost("logout")]
     [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Logout([FromBody] RefreshRequest request)
     {
         await _authService.LogoutAsync(request.RefreshToken);
@@ -75,9 +86,12 @@ public class AuthController : ControllerBase
 
     /// <summary>
     /// Google OAuth 2.0 login — exchange authorization code for JWT tokens.
+    /// Automatically creates or links accounts based on Google email.
     /// </summary>
     [HttpPost("google")]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<AuthResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
     {
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
@@ -88,11 +102,32 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
+    /// Admin-only: Create a Stadium Manager account with a temporary password.
+    /// The temporary password is sent to the manager's email.
+    /// </summary>
+    [HttpPost("stadium-manager")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(ApiResponse<CreateStadiumManagerResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> CreateStadiumManager([FromBody] CreateStadiumManagerRequest request)
+    {
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var ua = Request.Headers.UserAgent.ToString();
+
+        var result = await _authService.CreateStadiumManagerAsync(request, ip, ua);
+        return Ok(ApiResponse<CreateStadiumManagerResponse>.Ok(result, "Stadium Manager created successfully"));
+    }
+
+    /// <summary>
     /// Returns the RSA public key in JWKS format.
     /// Core Service uses this to validate JWTs without inter-service calls.
     /// </summary>
     [HttpGet(".well-known/jwks")]
     [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult GetJwks()
     {
         var rsaParams = _tokenService.GetPublicKey();
