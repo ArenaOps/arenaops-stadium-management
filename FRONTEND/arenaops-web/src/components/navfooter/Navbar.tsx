@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import {
     Home,
     Building2,
@@ -25,29 +25,41 @@ const navItems = [
 export default function Navbar() {
     const pathname = usePathname();
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+    const [isScrolled, setIsScrolled] = useState(false);
+    
+    const { scrollY } = useScroll();
+
+    useMotionValueEvent(scrollY, "change", (latest) => {
+        if (latest > 50) {
+            setIsScrolled(true);
+        } else {
+            setIsScrolled(false);
+        }
+    });
 
     const authMode = pathname === "/register" ? "signup" : "login";
 
     return (
-        <header className="w-full sticky top-0 z-50">
-            <div className="flex items-center justify-between max-w-7xl mx-auto px-8 py-5">
-
-                {/* 🔹 LOGO */}
+        <header 
+            className={`fixed top-0 w-full z-50 transition-all duration-500 ${
+                isScrolled 
+                ? "py-3 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 shadow-2xl" 
+                : "py-6 bg-transparent"
+            }`}
+        >
+            <div className="flex items-center justify-between max-w-7xl mx-auto px-8">
                 <Link href="/" className="flex items-center gap-2 group">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#06B6D4] flex items-center justify-center shadow-md">
-                        <span className="text-white font-bold text-sm">A</span>
+                    <div className="w-10 h-10 rounded-lg bg-emerald-500 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.4)] group-hover:rotate-6 transition-transform">
+                        <span className="text-black font-black text-xl italic">A</span>
                     </div>
 
-                    <span className="text-[#F8FAFC] text-xl font-semibold tracking-wide">
+                    <span className="text-[#F8FAFC] text-2xl font-black italic tracking-tighter uppercase">
                         Arena
-                        <span className="bg-gradient-to-r from-[#7C3AED] to-[#06B6D4] bg-clip-text text-transparent">
-                            Ops
-                        </span>
+                        <span className="text-emerald-500 ml-0.5">Ops</span>
                     </span>
                 </Link>
 
-                {/* 🔹 CENTER NAV */}
-                <div className="relative flex items-center gap-5">
+                <nav className="hidden md:flex items-center bg-[#111827]/40 backdrop-blur-md rounded-2xl px-2 border border-white/5">
                     {navItems.map((item, index) => {
                         const Icon = item.icon;
                         const isActive = pathname === item.href;
@@ -62,98 +74,75 @@ export default function Navbar() {
                             >
                                 <Link
                                     href={item.href}
-                                    className="relative flex items-center justify-center w-12 h-12 group"
+                                    className="relative flex items-center justify-center w-14 h-12 group transition-colors"
                                 >
-                                    {/* Active Glow */}
                                     {isActive && (
-                                        <>
-                                            <motion.div
-                                                layoutId="spotlight"
-                                                className="absolute -top-6 w-14 h-16 bg-[#7C3AED]/25 blur-xl rounded-2xl"
-                                                transition={{
-                                                    type: "spring",
-                                                    stiffness: 400,
-                                                    damping: 30,
-                                                }}
-                                            />
-
-                                            <motion.div
-                                                layoutId="indicator"
-                                                className="absolute -top-4 w-10 h-1 bg-gradient-to-r from-[#7C3AED] to-[#06B6D4] rounded-full"
-                                                transition={{
-                                                    type: "spring",
-                                                    stiffness: 400,
-                                                    damping: 30,
-                                                }}
-                                            />
-                                        </>
+                                        <motion.div
+                                            layoutId="nav-glow"
+                                            className="absolute inset-0 bg-emerald-500/10 blur-md rounded-xl"
+                                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                        />
                                     )}
 
                                     <Icon
-                                        size={26}
-                                        className={`transition-all duration-300 ${
+                                        size={22}
+                                        className={`relative z-10 transition-all duration-300 ${
                                             isActive
-                                                ? "text-[#06B6D4] scale-110"
-                                                : "text-[#9CA3AF] group-hover:text-[#F8FAFC]"
+                                                ? "text-emerald-400 scale-110"
+                                                : "text-gray-400 group-hover:text-white"
                                         }`}
                                     />
+                                    
+                                    {isActive && (
+                                        <motion.div 
+                                            layoutId="active-bar"
+                                            className="absolute bottom-1 w-5 h-0.5 bg-emerald-500 rounded-full"
+                                        />
+                                    )}
                                 </Link>
 
-                                {/* Tooltip */}
                                 <motion.div
-                                    initial={{ opacity: 0, y: 6 }}
+                                    initial={{ opacity: 0, y: 10 }}
                                     animate={{
                                         opacity: isHovered ? 1 : 0,
-                                        y: isHovered ? 0 : 6,
+                                        y: isHovered ? 0 : 10,
                                     }}
-                                    transition={{ duration: 0.2 }}
-                                    className="absolute -bottom-7 text-xs font-medium text-[#F8FAFC] bg-[#111827] px-3 py-1 rounded-md pointer-events-none whitespace-nowrap"
+                                    className="absolute -bottom-10 text-[10px] font-bold tracking-widest uppercase text-emerald-400 bg-black/90 px-3 py-1.5 rounded border border-emerald-500/20 pointer-events-none whitespace-nowrap"
                                 >
                                     {item.label}
                                 </motion.div>
                             </div>
                         );
                     })}
-                </div>
+                </nav>
 
-                {/* 🔹 AUTH TOGGLE */}
-                <div className="relative flex items-center bg-[#111827] rounded-full p-1 border border-[#1F2937]">
-
+                <div className="relative flex items-center bg-[#0a0a0a] rounded-full p-1 border border-white/10 overflow-hidden">
                     <motion.div
-                        layout
-                        className="absolute top-1 bottom-1 w-24 bg-gradient-to-r from-[#7C3AED] to-[#06B6D4] rounded-full"
+                        className="absolute h-[calc(100%-8px)] w-22 bg-emerald-500 rounded-full"
                         animate={{
-                            x: authMode === "login" ? 0 : 96,
+                            x: authMode === "login" ? 4 : 92,
                         }}
-                        transition={{
-                            type: "spring",
-                            stiffness: 400,
-                            damping: 30,
-                        }}
+                        transition={{ type: "spring", stiffness: 400, damping: 35 }}
                     />
 
                     <Link
                         href="/login"
-                        className={`relative z-10 w-24 py-2 text-sm font-medium flex items-center justify-center gap-2 transition ${
-                            authMode === "login"
-                                ? "text-white"
-                                : "text-[#9CA3AF] hover:text-[#F8FAFC]"
+                        className={`relative z-10 w-23 py-2 text-xs font-bold uppercase tracking-tighter flex items-center justify-center gap-2 transition-colors duration-300 ${
+                            authMode === "login" ? "text-black" : "text-gray-400 hover:text-white"
                         }`}
                     >
-                        <LogIn size={16} />
+                        <LogIn size={14} />
                         Login
                     </Link>
 
                     <Link
                         href="/register"
-                        className={`relative z-10 w-24 py-2 text-sm font-medium flex items-center justify-center gap-2 transition ${
-                            authMode === "signup"
-                                ? "text-white"
-                                : "text-[#9CA3AF] hover:text-[#F8FAFC]"
+                        className={`relative z-10 w-23 py-2 text-xs font-bold uppercase tracking-tighter flex items-center justify-center gap-2 transition-colors duration-300 ${
+                            authMode === "signup" ? "text-black" : "text-gray-400 hover:text-white"
                         }`}
                     >
-                        <UserPlus size={16} />
-                        Sign Up
+                        <UserPlus size={14} />
+                        Join
                     </Link>
                 </div>
             </div>

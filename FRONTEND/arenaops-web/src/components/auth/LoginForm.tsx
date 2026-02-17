@@ -10,6 +10,7 @@ import {
 } from "@/app/store/authSlice";
 import gsap from "gsap";
 import Link from "next/link";
+import { Github, Chrome, Twitter, Linkedin } from "lucide-react";
 
 interface FormState {
   errors: {
@@ -25,25 +26,31 @@ const initialState: FormState = {
 export default function LoginForm() {
   const containerRef = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
-  const { loading, error } = useSelector(
-    (state: RootState) => state.auth
-  );
+  const { loading, error } = useSelector((state: RootState) => state.auth);
 
-  // GSAP Animation
+  // Stadium-Entrance Animation
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
       gsap.from(".left-panel", {
-        x: -150,
+        x: -100,
         opacity: 0,
-        duration: 1,
-        ease: "power3.out",
+        duration: 0.8,
+        ease: "expo.out",
       });
 
       gsap.from(".right-panel", {
-        x: 150,
+        x: 100,
         opacity: 0,
-        duration: 1,
-        ease: "power3.out",
+        duration: 0.8,
+        ease: "expo.out",
+      });
+
+      gsap.from(".input-field", {
+        y: 20,
+        opacity: 0,
+        stagger: 0.1,
+        duration: 0.5,
+        delay: 0.4,
       });
     }, containerRef);
 
@@ -54,15 +61,12 @@ export default function LoginForm() {
     async (prevState: FormState, formData: FormData) => {
       const username = formData.get("username") as string;
       const password = formData.get("password") as string;
-
       const errors: FormState["errors"] = {};
 
-      if (!username) errors.username = "Username is required";
-      if (!password) errors.password = "Password is required";
+      if (!username) errors.username = "Enter your scout ID / Username";
+      if (!password) errors.password = "Password required to enter pitch";
 
-      if (Object.keys(errors).length > 0) {
-        return { errors };
-      }
+      if (Object.keys(errors).length > 0) return { errors };
 
       dispatch(loginStart());
       await new Promise((res) => setTimeout(res, 1000));
@@ -70,7 +74,7 @@ export default function LoginForm() {
       if (username === "admin" && password === "123456") {
         dispatch(loginSuccess(username));
       } else {
-        dispatch(loginFailure("Invalid credentials"));
+        dispatch(loginFailure("Invalid credentials. Check your clearance."));
       }
 
       return { errors: {} };
@@ -81,70 +85,77 @@ export default function LoginForm() {
   return (
     <div
       ref={containerRef}
-      className="w-[70vw] max-w-375 h-130 bg-[#f3f3f3] rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] overflow-hidden grid grid-cols-1 lg:grid-cols-2"
+      className="w-[85vw] max-w-250 min-h-125 bg-[#0a0a0a] rounded-3xl shadow-[0_0_80px_rgba(16,185,129,0.1)] overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-white/5"
     >
-      <div className="left-panel hidden lg:flex flex-col justify-center items-center bg-linear-to-br from-blue-400 to-indigo-600 text-white rounded-r-[280px]">
-        <div className="text-center px-16">
-          <h2 className="text-5xl font-bold mb-4">
-            Welcome Back!
+      <div className="left-panel hidden lg:flex flex-col justify-center items-center bg-[#10b981] text-black rounded-r-[150px] relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
+        
+        <div className="text-center px-16 relative z-10">
+          <h2 className="text-6xl font-black italic tracking-tighter mb-4 uppercase">
+            Own The <br /> Pitch.
           </h2>
-          <p className="mb-6 text-lg opacity-90">
-            Don’t have an account?
+          <p className="mb-8 text-sm font-bold uppercase tracking-widest opacity-80">
+            Secure clearance for ArenaOps
           </p>
 
           <Link
             href="/register"
-            className="px-8 py-3 border border-white rounded-lg hover:bg-white hover:text-blue-600 transition"
+            className="px-10 py-3 bg-black text-white font-bold rounded-full hover:scale-105 transition-transform inline-block uppercase text-xs tracking-[0.2em]"
           >
-            Register
+            Create Scout ID
           </Link>
         </div>
       </div>
 
-      <div className="right-panel flex flex-col justify-center px-20">
-        <h2 className="text-4xl font-bold text-gray-800 mb-8">
-          Login
-        </h2>
+      {/* Right Panel - Login Auth */}
+      <div className="right-panel flex flex-col justify-center px-12 lg:px-20 bg-[#050505]">
+        <div className="mb-8">
+          <h2 className="text-4xl font-black text-white italic tracking-tighter uppercase mb-1">
+            Login<span className="text-[#10b981]">.</span>
+          </h2>
+          <p className="text-gray-500 text-xs font-bold uppercase tracking-[0.2em]">
+            Authentication Required
+          </p>
+        </div>
 
-        <form action={formAction} className="space-y-5">
-
-          <div>
+        <form action={formAction} className="space-y-4">
+          <div className="input-field">
             <input
               name="username"
-              placeholder="Username"
-              className={`w-full px-5 py-3 rounded-xl bg-[#e9e9e9] shadow-inner outline-none ${
-                state.errors.username ? "ring-2 ring-red-400" : ""
+              placeholder="SCOUT ID / USERNAME"
+              className={`w-full px-5 py-4 rounded-xl bg-[#111827] text-white border border-white/5 outline-none focus:border-[#10b981] transition-all text-xs font-bold tracking-widest placeholder:text-gray-600 ${
+                state.errors.username ? "border-red-500/50 ring-1 ring-red-500/20" : ""
               }`}
             />
             {state.errors.username && (
-              <p className="text-red-500 text-sm mt-1">
+              <p className="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-tighter">
                 {state.errors.username}
               </p>
             )}
           </div>
 
-          <div>
+          <div className="input-field">
             <input
               name="password"
               type="password"
-              placeholder="Password"
-              className={`w-full px-5 py-3 rounded-xl bg-[#e9e9e9] shadow-inner outline-none ${
-                state.errors.password ? "ring-2 ring-red-400" : ""
+              placeholder="CLEARANCE PASSWORD"
+              className={`w-full px-5 py-4 rounded-xl bg-[#111827] text-white border border-white/5 outline-none focus:border-[#10b981] transition-all text-xs font-bold tracking-widest placeholder:text-gray-600 ${
+                state.errors.password ? "border-red-500/50 ring-1 ring-red-500/20" : ""
               }`}
             />
             {state.errors.password && (
-              <p className="text-red-500 text-sm mt-1">
+              <p className="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-tighter">
                 {state.errors.password}
               </p>
             )}
           </div>
 
-          <div className="text-right text-sm text-gray-600 hover:underline cursor-pointer">
-            Forgot Password?
+          <div className="text-right text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-[#10b981] cursor-pointer transition-colors">
+            Reset Credentials?
           </div>
 
           {error && (
-            <p className="text-red-600 text-sm font-medium">
+            <p className="bg-red-500/10 border border-red-500/50 text-red-500 p-3 rounded-lg text-[10px] font-bold uppercase text-center">
               {error}
             </p>
           )}
@@ -152,23 +163,27 @@ export default function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-400 to-indigo-600 text-white font-semibold shadow-md hover:scale-[1.02] transition disabled:opacity-50"
+            className="input-field w-full py-4 rounded-xl bg-white text-black font-black uppercase tracking-widest shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:bg-[#10b981] hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] transition-all disabled:opacity-50"
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading ? "Verifying clearance..." : "Enter Arena →"}
           </button>
         </form>
 
-        <div className="text-center mt-6 text-gray-600 text-sm">
-          or login with social platforms
+        <div className="text-center mt-10 text-gray-600 text-[10px] font-bold uppercase tracking-[0.3em] mb-4">
+          External Networks
         </div>
 
-        <div className="flex justify-center gap-4 mt-4">
-          {["G", "f", "Q", "in"].map((item, i) => (
+        <div className="flex justify-center gap-4">
+          {[
+            { icon: <Chrome size={18} />, label: "G" },
+            { icon: <Github size={18} />, label: "Git" },
+            { icon: <Twitter size={18} />, label: "X" },
+          ].map((item, i) => (
             <div
               key={i}
-              className="w-10 h-10 flex items-center justify-center bg-white rounded-lg shadow-md cursor-pointer hover:scale-110 transition font-semibold text-gray-700"
+              className="w-12 h-12 flex items-center justify-center bg-[#111827] border border-white/5 rounded-full text-white hover:text-[#10b981] hover:border-[#10b981]/50 transition-all cursor-pointer shadow-lg"
             >
-              {item}
+              {item.icon}
             </div>
           ))}
         </div>
