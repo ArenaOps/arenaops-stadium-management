@@ -1,32 +1,34 @@
 "use client";
 
-import { useRef, useLayoutEffect, useActionState } from "react";
+import { useRef, useLayoutEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/app/store/store";
-import {
-  loginStart,
-  loginSuccess,
-  loginFailure,
-} from "@/app/store/authSlice";
+import { loginUser } from "@/app/store/authSlice";
+import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import Link from "next/link";
-import { Github, Chrome, Twitter, Linkedin } from "lucide-react";
+import { Github, Chrome, Twitter } from "lucide-react";
 
 interface FormState {
   errors: {
-    username?: string;
+    email?: string; // changed from username
     password?: string;
   };
 }
 
-const initialState: FormState = {
-  errors: {},
-};
-
 export default function LoginForm() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const dispatch = useDispatch();
-  const { loading, error } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch<any>(); // Type dispatch for thunk
+  const router = useRouter();
+  const { loading, error, isAuthenticated } = useSelector((state: RootState) => state.auth);
+
+  // Local state for form errors since we are moving away from useActionState for simplicity with Thunks
+  const [formErrors, setFormErrors] = useState<FormState["errors"]>({});
+
+  // Redirect if authenticated
+  if (isAuthenticated) {
+    router.push("/");
+  }
 
   // Stadium-Entrance Animation
   useLayoutEffect(() => {
@@ -57,30 +59,30 @@ export default function LoginForm() {
     return () => ctx.revert();
   }, []);
 
-  const [state, formAction] = useActionState(
-    async (prevState: FormState, formData: FormData) => {
-      const username = formData.get("username") as string;
-      const password = formData.get("password") as string;
-      const errors: FormState["errors"] = {};
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const errors: FormState["errors"] = {};
 
-      if (!username) errors.username = "Enter your scout ID / Username";
-      if (!password) errors.password = "Password required to enter pitch";
+    if (!email) errors.email = "Enter your email / credentials";
+    if (!password) errors.password = "Password required to enter pitch";
 
-      if (Object.keys(errors).length > 0) return { errors };
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
 
-      dispatch(loginStart());
-      await new Promise((res) => setTimeout(res, 1000));
+    setFormErrors({});
 
-      if (username === "admin" && password === "123456") {
-        dispatch(loginSuccess(username));
-      } else {
-        dispatch(loginFailure("Invalid credentials. Check your clearance."));
-      }
+    // Dispatch login action
+    const result = await dispatch(loginUser({ email, password }));
 
-      return { errors: {} };
-    },
-    initialState
-  );
+    if (loginUser.fulfilled.match(result)) {
+      router.push("/");
+    }
+  };
 
   return (
     <div
@@ -89,7 +91,7 @@ export default function LoginForm() {
     >
       <div className="left-panel hidden lg:flex flex-col justify-center items-center bg-[#10b981] text-black rounded-r-[150px] relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
-        
+
         <div className="text-center px-16 relative z-10">
           <h2 className="text-6xl font-black italic tracking-tighter mb-4 uppercase">
             Own The <br /> Pitch.
@@ -102,7 +104,7 @@ export default function LoginForm() {
             href="/register"
             className="px-10 py-3 bg-black text-white font-bold rounded-full hover:scale-105 transition-transform inline-block uppercase text-xs tracking-[0.2em]"
           >
-            Create Scout ID
+            Create Account
           </Link>
         </div>
       </div>
@@ -118,18 +120,18 @@ export default function LoginForm() {
           </p>
         </div>
 
-        <form action={formAction} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="input-field">
             <input
-              name="username"
-              placeholder="SCOUT ID / USERNAME"
-              className={`w-full px-5 py-4 rounded-xl bg-[#111827] text-white border border-white/5 outline-none focus:border-[#10b981] transition-all text-xs font-bold tracking-widest placeholder:text-gray-600 ${
-                state.errors.username ? "border-red-500/50 ring-1 ring-red-500/20" : ""
-              }`}
+              name="email"
+              type="email"
+              placeholder="EMAIL ADDRESS"
+              className={`w-full px-5 py-4 rounded-xl bg-[#111827] text-white border border-white/5 outline-none focus:border-[#10b981] transition-all text-xs font-bold tracking-widest placeholder:text-gray-600 ${formErrors.email ? "border-red-500/50 ring-1 ring-red-500/20" : ""
+                }`}
             />
-            {state.errors.username && (
+            {formErrors.email && (
               <p className="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-tighter">
-                {state.errors.username}
+                {formErrors.email}
               </p>
             )}
           </div>
@@ -139,13 +141,12 @@ export default function LoginForm() {
               name="password"
               type="password"
               placeholder="CLEARANCE PASSWORD"
-              className={`w-full px-5 py-4 rounded-xl bg-[#111827] text-white border border-white/5 outline-none focus:border-[#10b981] transition-all text-xs font-bold tracking-widest placeholder:text-gray-600 ${
-                state.errors.password ? "border-red-500/50 ring-1 ring-red-500/20" : ""
-              }`}
+              className={`w-full px-5 py-4 rounded-xl bg-[#111827] text-white border border-white/5 outline-none focus:border-[#10b981] transition-all text-xs font-bold tracking-widest placeholder:text-gray-600 ${formErrors.password ? "border-red-500/50 ring-1 ring-red-500/20" : ""
+                }`}
             />
-            {state.errors.password && (
+            {formErrors.password && (
               <p className="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-tighter">
-                {state.errors.password}
+                {formErrors.password}
               </p>
             )}
           </div>
@@ -163,7 +164,7 @@ export default function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="input-field w-full py-4 rounded-xl bg-white text-black font-black uppercase tracking-widest shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:bg-[#10b981] hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] transition-all disabled:opacity-50"
+            className=" w-full py-4 rounded-xl bg-white text-black font-black uppercase tracking-widest shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:bg-[#10b981] hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] transition-all disabled:opacity-50"
           >
             {loading ? "Verifying clearance..." : "Enter Arena →"}
           </button>
