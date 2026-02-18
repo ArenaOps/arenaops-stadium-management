@@ -59,6 +59,17 @@ export default function LoginForm() {
     return () => ctx.revert();
   }, []);
 
+  const handleGoogleLogin = () => {
+    const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
+    const redirectUri = window.location.origin + "/auth/callback";
+    const scope = "email profile";
+    const responseType = "code";
+
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=${responseType}&scope=${encodeURIComponent(scope)}`;
+
+    window.location.href = authUrl;
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -176,12 +187,13 @@ export default function LoginForm() {
 
         <div className="flex justify-center gap-4">
           {[
-            { icon: <Chrome size={18} />, label: "G" },
-            { icon: <Github size={18} />, label: "Git" },
-            { icon: <Twitter size={18} />, label: "X" },
+            { icon: <Chrome size={18} />, label: "G", action: handleGoogleLogin },
+            { icon: <Github size={18} />, label: "Git", action: () => { } },
+            { icon: <Twitter size={18} />, label: "X", action: () => { } },
           ].map((item, i) => (
             <div
               key={i}
+              onClick={item.action}
               className="w-12 h-12 flex items-center justify-center bg-[#111827] border border-white/5 rounded-full text-white hover:text-[#10b981] hover:border-[#10b981]/50 transition-all cursor-pointer shadow-lg"
             >
               {item.icon}

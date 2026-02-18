@@ -13,6 +13,21 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 
+// CORS — allow frontend to call the API
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(
+                "http://localhost:3000",
+                "https://localhost:3000"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
 // Database — EF Core with SQL Server
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseSqlServer(
@@ -124,7 +139,14 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+// Only redirect to HTTPS in production (dev uses HTTP only)
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
+// CORS — must be before Auth
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 

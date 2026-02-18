@@ -42,13 +42,13 @@
 
 ### Backend 1
 
-- Set up `ArenaOps.AuthService` with Clean Architecture (API, Core, Infrastructure)
-- Create Auth DB schema (Users, Roles, UserRoles, RefreshTokens, AuthAuditLog, ExternalLogins)
-- Implement JWT with RSA key pair (sign with private key, export public key)
-- Implement endpoints: Register, Login, Refresh, Logout
-- **Implement Google OAuth 2.0 login** (exchange code, find/create user, account linking)
-- Add role-based claims to JWT (userId, email, roles[])
-- Seed default roles (Admin, StadiumOwner, Organizer, User)
+- [x] Set up `ArenaOps.AuthService` with Clean Architecture (API, Core, Infrastructure)
+- [x] Create Auth DB schema (Users, Roles, UserRoles, RefreshTokens, AuthAuditLog, ExternalLogins)
+- [x] Implement JWT with RSA key pair (sign with private key, export public key)
+- [x] Implement endpoints: Register, Login, Refresh, Logout
+- [x] **Implement Google OAuth 2.0 login** (exchange code, find/create user, account linking)
+- [x] Add role-based claims to JWT (userId, email, roles[])
+- [x] Seed default roles (Admin, StadiumOwner, Organizer, User)
 
 ### Backend 2
 

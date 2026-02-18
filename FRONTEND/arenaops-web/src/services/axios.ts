@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+// Routes through the Next.js BFF proxy at /api/auth/[...slug] and /api/core/[...slug]
+// The proxy forwards requests to the actual backend services (localhost:5001, etc.)
 export const api = axios.create({
-    baseURL: 'http://localhost:5114',
+    baseURL: '',
     headers: {
         'Content-Type': 'application/json',
     },
