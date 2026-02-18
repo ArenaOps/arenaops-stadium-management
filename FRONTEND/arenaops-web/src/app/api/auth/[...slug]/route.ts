@@ -1,30 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:5001/api';
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:5001/api/auth';
+
+// Headers that should NOT be forwarded to the backend
+const HOP_BY_HOP_HEADERS = ['host', 'connection', 'expect', 'transfer-encoding', 'keep-alive', 'upgrade'];
 
 async function handleProxy(request: NextRequest, slug: string[]) {
     const slugPath = slug.join('/');
     const url = `${AUTH_SERVICE_URL}/${slugPath}${request.nextUrl.search}`;
 
-    const headers = new Headers(request.headers);
-    headers.set('Host', new URL(AUTH_SERVICE_URL).host);
+    // Build clean headers — strip hop-by-hop and problematic ones
+    const headers: Record<string, string> = {};
+    request.headers.forEach((value, key) => {
+        if (!HOP_BY_HOP_HEADERS.includes(key.toLowerCase())) {
+            headers[key] = value;
+        }
+    });
+    headers['host'] = new URL(AUTH_SERVICE_URL).host;
 
     try {
-        const body = ['GET', 'HEAD'].includes(request.method) ? undefined : await request.arrayBuffer();
+        const body = ['GET', 'HEAD'].includes(request.method)
+            ? undefined
+            : await request.text();
 
         const response = await fetch(url, {
             method: request.method,
             headers: headers,
             body: body,
-            // @ts-ignore
-            duplex: 'half',
         });
 
-        const data = await response.blob();
-        return new NextResponse(data, {
+        const responseBody = await response.text();
+
+        return new NextResponse(responseBody, {
             status: response.status,
             statusText: response.statusText,
-            headers: response.headers,
+            headers: {
+                'Content-Type': response.headers.get('Content-Type') || 'application/json',
+            },
         });
     } catch (error) {
         console.error(`[BFF Auth Proxy Error]:`, error);

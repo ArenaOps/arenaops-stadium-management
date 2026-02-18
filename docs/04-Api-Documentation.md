@@ -11,10 +11,11 @@
 
 | Endpoint | Method | Request Body | Response |
 | --- | --- | --- | --- |
-| `/api/auth/register` | POST | `{ email, password, fullName, role }` | `{ userId, message }` |
+| `/api/auth/register` | POST | `{ email, password, fullName }` | `{ userId, message }` — *Role forced to "User"* |
 | `/api/auth/login` | POST | `{ email, password }` | `{ accessToken, refreshToken, userId, roles }` |
 | `/api/auth/refresh` | POST | `{ refreshToken }` | `{ accessToken, refreshToken }` |
-| `/api/auth/logout` | POST | `{ refreshToken }` | `{ message }` |
+| `/api/auth/logout` | POST | `{ refreshToken }` | `{ message }` — *Blacklists JWT + deletes refresh token* |
+| `/api/auth/stadium-manager` | POST | `{ email, fullName, phoneNumber }` | `{ userId, message }` — *Admin Only. Sends temp password.* |
 | `/api/auth/forgot-password` | POST | `{ email }` | `{ message }` |
 | `/api/auth/reset-password` | POST | `{ token, newPassword }` | `{ message }` |
 
