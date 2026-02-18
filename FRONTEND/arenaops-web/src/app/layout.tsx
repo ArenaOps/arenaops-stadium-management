@@ -3,8 +3,7 @@ import { Inter, Outfit } from "next/font/google"; // Modern fonts
 import "@/styles/tailwind.css";
 import "@/styles/globals.scss";
 import Providers from "../providers/providers";
-import Navbar from "@/components/navfooter/Navbar";
-import Footer from "@/components/navfooter/Footer";
+import ClientLayout from "@/components/layout/ClientLayout";
 
 // Primary font for body text
 const inter = Inter({
@@ -36,9 +35,7 @@ export default function RootLayout({
         className={`${inter.variable} ${outfit.variable} font-sans antialiased bg-background text-foreground`}
       >
         <Providers>
-          <Navbar />
-          {children}
-          <Footer />
+          <ClientLayout>{children}</ClientLayout>
         </Providers>
       </body>
     </html>
