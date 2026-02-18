@@ -35,13 +35,12 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${outfit.variable} font-sans antialiased bg-background text-foreground`}
       >
-        <Navbar/>
         <Providers>
-        {children}
+          <Navbar />
+          {children}
+          <Footer />
         </Providers>
-        <Footer/>
       </body>
     </html>
   );
 }
-
