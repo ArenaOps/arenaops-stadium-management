@@ -1,9 +1,12 @@
 using System.Security.Cryptography;
+using System.Text.Json;
+using System.Threading.RateLimiting;
 using ArenaOps.AuthService.Core.Interfaces;
 using ArenaOps.AuthService.Core.Models;
 using ArenaOps.AuthService.Infrastructure.Data;
 using ArenaOps.AuthService.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -12,6 +15,42 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+
+// Rate Limiting — prevent brute-force attacks on auth endpoints
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+        var response = ApiResponse<object>.Fail("RATE_LIMITED", "Too many requests. Please try again later.");
+        await context.HttpContext.Response.WriteAsync(
+            JsonSerializer.Serialize(response, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }),
+            cancellationToken);
+    };
+
+    // Strict: 5 requests per minute per IP (login, forgot-password, reset-password)
+    options.AddPolicy("auth-strict", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    // General: 20 requests per minute per IP (register, google, refresh)
+    options.AddPolicy("auth-general", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
 
 // CORS — allow frontend to call the API
 builder.Services.AddCors(options =>
@@ -81,6 +120,20 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new RsaSecurityKey(rsa),
         ClockSkew = TimeSpan.FromMinutes(1)
     };
+
+    // Read JWT from cookie when Authorization header is absent
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            if (string.IsNullOrEmpty(context.Token) &&
+                context.Request.Cookies.TryGetValue("accessToken", out var cookieToken))
+            {
+                context.Token = cookieToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
 
 // Swagger/OpenAPI with JWT Bearer support
@@ -147,6 +200,9 @@ if (!app.Environment.IsDevelopment())
 
 // CORS — must be before Auth
 app.UseCors("AllowFrontend");
+
+// Rate limiting — must be before Auth
+app.UseRateLimiter();
 
 app.UseAuthentication();
 
