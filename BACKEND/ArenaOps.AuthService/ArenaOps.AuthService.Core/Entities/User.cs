@@ -14,6 +14,10 @@ public class User
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+    // Password Reset OTP
+    public string? PasswordResetOtpHash { get; set; }
+    public DateTime? PasswordResetOtpExpiresAt { get; set; }
+
     // Navigation properties
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();

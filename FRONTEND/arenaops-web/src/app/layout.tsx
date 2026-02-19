@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Inter, Outfit } from "next/font/google"; // Modern fonts
+import { Inter, Outfit } from "next/font/google";
 import "@/styles/tailwind.css";
 import "@/styles/globals.scss";
 import Providers from "../providers/providers";
-import Navbar from "@/components/navfooter/Navbar";
-import Footer from "@/components/navfooter/Footer";
+import ClientLayout from "@/components/layout/ClientLayout";
+import CustomCursor from "@/components/CursorPointer";
 
 // Primary font for body text
 const inter = Inter({
@@ -35,13 +35,11 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${outfit.variable} font-sans antialiased bg-background text-foreground`}
       >
-        <Navbar/>
         <Providers>
-        {children}
+          <CustomCursor/>
+          <ClientLayout>{children}</ClientLayout>
         </Providers>
-        <Footer/>
       </body>
     </html>
   );
 }
-

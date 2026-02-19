@@ -4,6 +4,6 @@ namespace ArenaOps.AuthService.Core.DTOs;
 
 public class RefreshRequest
 {
-    [Required(ErrorMessage = "Refresh token is required.")]
-    public string RefreshToken { get; set; } = string.Empty;
+    // Optional in request body — can also come from the refreshToken cookie.
+    public string? RefreshToken { get; set; }
 }

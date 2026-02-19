@@ -7,8 +7,6 @@ export interface UserData {
     userId: string;
     roles: string[];
     isNewUser: boolean;
-    fullName: string;
-    email: string;
 }
 
 export interface AuthResponse {
