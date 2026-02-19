@@ -26,7 +26,7 @@ export default function Navbar() {
     const pathname = usePathname();
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
     const [isScrolled, setIsScrolled] = useState(false);
-    
+
     const { scrollY } = useScroll();
 
     useMotionValueEvent(scrollY, "change", (latest) => {
@@ -40,12 +40,11 @@ export default function Navbar() {
     const authMode = pathname === "/register" ? "signup" : "login";
 
     return (
-        <header 
-            className={`fixed top-0 w-full z-50 transition-all duration-500 ${
-                isScrolled 
-                ? "py-3 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 shadow-2xl" 
-                : "py-6 bg-transparent"
-            }`}
+        <header
+            className={`fixed top-0 w-full z-50 transition-all duration-500 ${isScrolled
+                    ? "py-3 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 shadow-2xl"
+                    : "py-6 bg-transparent"
+                }`}
         >
             <div className="flex items-center justify-between max-w-7xl mx-auto px-8">
                 <Link href="/" className="flex items-center gap-2 group">
@@ -86,15 +85,14 @@ export default function Navbar() {
 
                                     <Icon
                                         size={22}
-                                        className={`relative z-10 transition-all duration-300 ${
-                                            isActive
+                                        className={`relative z-10 transition-all duration-300 ${isActive
                                                 ? "text-emerald-400 scale-110"
                                                 : "text-gray-400 group-hover:text-white"
-                                        }`}
+                                            }`}
                                     />
-                                    
+
                                     {isActive && (
-                                        <motion.div 
+                                        <motion.div
                                             layoutId="active-bar"
                                             className="absolute bottom-1 w-5 h-0.5 bg-emerald-500 rounded-full"
                                         />
@@ -127,9 +125,8 @@ export default function Navbar() {
 
                     <Link
                         href="/login"
-                        className={`relative z-10 w-23 py-2 text-xs font-bold uppercase tracking-tighter flex items-center justify-center gap-2 transition-colors duration-300 ${
-                            authMode === "login" ? "text-black" : "text-gray-400 hover:text-white"
-                        }`}
+                        className={`relative z-10 w-23 py-2 text-xs font-bold uppercase tracking-tighter flex items-center justify-center gap-2 transition-colors duration-300 ${authMode === "login" ? "text-black" : "text-gray-400 hover:text-white"
+                            }`}
                     >
                         <LogIn size={14} />
                         Login
@@ -137,9 +134,8 @@ export default function Navbar() {
 
                     <Link
                         href="/register"
-                        className={`relative z-10 w-23 py-2 text-xs font-bold uppercase tracking-tighter flex items-center justify-center gap-2 transition-colors duration-300 ${
-                            authMode === "signup" ? "text-black" : "text-gray-400 hover:text-white"
-                        }`}
+                        className={`relative z-10 w-23 py-2 text-xs font-bold uppercase tracking-tighter flex items-center justify-center gap-2 transition-colors duration-300 ${authMode === "signup" ? "text-black" : "text-gray-400 hover:text-white"
+                            }`}
                     >
                         <UserPlus size={14} />
                         Join
