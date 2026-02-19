@@ -11,6 +11,5 @@ public class Landmark
     public double Width { get; set; }
     public double Height { get; set; }
 
-    // Navigation Properties
     public SeatingPlan SeatingPlan { get; set; } = null!;
 }
