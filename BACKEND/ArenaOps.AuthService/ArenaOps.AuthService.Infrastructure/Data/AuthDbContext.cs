@@ -39,6 +39,10 @@ public class AuthDbContext : DbContext
             entity.Property(e => e.IsEmailVerified).HasDefaultValue(false);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+            // Password Reset OTP
+            entity.Property(e => e.PasswordResetOtpHash).IsRequired(false).HasMaxLength(128);
+            entity.Property(e => e.PasswordResetOtpExpiresAt).IsRequired(false);
         });
 
         // =====================

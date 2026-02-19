@@ -1,23 +1,70 @@
-// import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-// const SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:5001/api';
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:5001/api/auth';
 
-// export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
-//     const slugPath = (await params).slug.join('/');
-//     return NextResponse.json({ message: `[BFF] Proxying GET to ${SERVICE_URL}/${slugPath}` });
-// }
+// Headers that should NOT be forwarded to the backend
+const HOP_BY_HOP_HEADERS = ['host', 'connection', 'expect', 'transfer-encoding', 'keep-alive', 'upgrade'];
 
-// export async function POST(request: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
-//     const slugPath = (await params).slug.join('/');
-//     return NextResponse.json({ message: `[BFF] Proxying POST to ${SERVICE_URL}/${slugPath}` });
-// }
+async function handleProxy(request: NextRequest, slug: string[]) {
+    const slugPath = slug.join('/');
+    const url = `${AUTH_SERVICE_URL}/${slugPath}${request.nextUrl.search}`;
 
-// export async function PUT(request: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
-//     const slugPath = (await params).slug.join('/');
-//     return NextResponse.json({ message: `[BFF] Proxying PUT to ${SERVICE_URL}/${slugPath}` });
-// }
+    // Build clean headers — strip hop-by-hop and problematic ones
+    const headers: Record<string, string> = {};
+    request.headers.forEach((value, key) => {
+        if (!HOP_BY_HOP_HEADERS.includes(key.toLowerCase())) {
+            headers[key] = value;
+        }
+    });
+    headers['host'] = new URL(AUTH_SERVICE_URL).host;
 
-// export async function DELETE(request: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
-//     const slugPath = (await params).slug.join('/');
-//     return NextResponse.json({ message: `[BFF] Proxying DELETE to ${SERVICE_URL}/${slugPath}` });
-// }
+    try {
+        const body = ['GET', 'HEAD'].includes(request.method)
+            ? undefined
+            : await request.text();
+
+        const response = await fetch(url, {
+            method: request.method,
+            headers: headers,
+            body: body,
+        });
+
+        const responseBody = await response.text();
+
+        return new NextResponse(responseBody, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: {
+                'Content-Type': response.headers.get('Content-Type') || 'application/json',
+            },
+        });
+    } catch (error) {
+        console.error(`[BFF Auth Proxy Error]:`, error);
+        return NextResponse.json({ error: 'Failed to proxy request to Auth Service' }, { status: 502 });
+    }
+}
+
+export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
+    const { slug } = await params;
+    return handleProxy(request, slug);
+}
+
+export async function POST(request: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
+    const { slug } = await params;
+    return handleProxy(request, slug);
+}
+
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
+    const { slug } = await params;
+    return handleProxy(request, slug);
+}
+
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
+    const { slug } = await params;
+    return handleProxy(request, slug);
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
+    const { slug } = await params;
+    return handleProxy(request, slug);
+}
