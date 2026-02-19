@@ -17,7 +17,7 @@ public class RegisterRequest
     [MaxLength(200, ErrorMessage = "Full name must not exceed 200 characters.")]
     public string FullName { get; set; } = string.Empty;
 
-    // NOTE: Ignored during registration — all users default to "User" role for security.
-    // Stadium managers are created via a dedicated admin endpoint.
+    // Optional: "User" (default) or "Organizer" for self-registration.
+    // Admin/StadiumOwner roles are only assigned via dedicated admin endpoints.
     public string? Role { get; set; }
 }

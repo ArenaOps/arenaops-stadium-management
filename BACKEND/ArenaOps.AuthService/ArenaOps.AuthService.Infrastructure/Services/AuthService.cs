@@ -49,12 +49,18 @@ public class AuthService : IAuthService
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
 
-        // SECURITY: Always assign "User" role — ignoring client-side role request
-        var role = await _db.Roles.FirstAsync(r => r.Name == "User");
+        // SECURITY: Only "User" and "Organizer" are allowed via self-registration.
+        // Admin, StadiumOwner are created via dedicated admin endpoints only.
+        var allowedSelfRegisterRoles = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "User", "Organizer" };
+        var roleName = !string.IsNullOrEmpty(request.Role) && allowedSelfRegisterRoles.Contains(request.Role)
+            ? request.Role
+            : "User";
+
+        var role = await _db.Roles.FirstAsync(r => r.Name == roleName);
         _db.UserRoles.Add(new UserRole { UserId = user.UserId, RoleId = role.RoleId });
         await _db.SaveChangesAsync();
 
-        var roles = new List<string> { "User" };
+        var roles = new List<string> { roleName };
         var tokenResult = _tokenService.GenerateTokens(user, roles);
 
         _db.RefreshTokens.Add(new RefreshToken
@@ -259,6 +265,118 @@ public class AuthService : IAuthService
         await _db.SaveChangesAsync();
     }
 
+    // =============================================
+    // FORGOT PASSWORD — generate OTP, hash, email
+    // =============================================
+    public async Task ForgotPasswordAsync(string email)
+    {
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+        // Always return silently — prevents email enumeration
+        if (user == null || !user.IsActive)
+            return;
+
+        var otp = GenerateOtp();
+        user.PasswordResetOtpHash = HashOtp(otp);
+        user.PasswordResetOtpExpiresAt = DateTime.UtcNow.AddMinutes(15);
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync();
+
+        // Send the raw OTP via email (mock logs it to console)
+        await _emailService.SendPasswordResetEmailAsync(email, otp);
+    }
+
+    // =============================================
+    // RESET PASSWORD — verify OTP, set new password
+    // =============================================
+    public async Task ResetPasswordAsync(ResetPasswordRequest request, string? ipAddress, string? userAgent)
+    {
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Email == request.Email)
+            ?? throw new BadRequestException("INVALID_OTP", "Invalid or expired OTP.");
+
+        // Validate OTP
+        if (string.IsNullOrEmpty(user.PasswordResetOtpHash) ||
+            user.PasswordResetOtpExpiresAt == null ||
+            user.PasswordResetOtpExpiresAt < DateTime.UtcNow)
+        {
+            throw new BadRequestException("INVALID_OTP", "Invalid or expired OTP.");
+        }
+
+        var providedHash = HashOtp(request.Otp);
+        if (user.PasswordResetOtpHash != providedHash)
+        {
+            throw new BadRequestException("INVALID_OTP", "Invalid or expired OTP.");
+        }
+
+        // Update password
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.PasswordResetOtpHash = null;
+        user.PasswordResetOtpExpiresAt = null;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        // Revoke all refresh tokens (force re-login everywhere)
+        var tokens = await _db.RefreshTokens
+            .Where(rt => rt.UserId == user.UserId && rt.RevokedAt == null)
+            .ToListAsync();
+
+        foreach (var token in tokens)
+            token.RevokedAt = DateTime.UtcNow;
+
+        // Audit log
+        _db.AuthAuditLogs.Add(new AuthAuditLog
+        {
+            UserId = user.UserId,
+            Action = "PasswordReset",
+            IpAddress = ipAddress,
+            UserAgent = userAgent
+        });
+
+        await _db.SaveChangesAsync();
+    }
+
+    // =============================================
+    // CHANGE PASSWORD — authenticated, current + new
+    // =============================================
+    public async Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request, string? ipAddress, string? userAgent)
+    {
+        var user = await _db.Users.FindAsync(userId)
+            ?? throw new NotFoundException("USER_NOT_FOUND", "User not found.");
+
+        if (string.IsNullOrEmpty(user.PasswordHash))
+            throw new BadRequestException("NO_PASSWORD", "This account uses external login. Set a password via forgot-password first.");
+
+        if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
+            throw new UnauthorizedException("WRONG_PASSWORD", "Current password is incorrect.");
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+
+        // Revoke all refresh tokens (force re-login everywhere)
+        var tokens = await _db.RefreshTokens
+            .Where(rt => rt.UserId == user.UserId && rt.RevokedAt == null)
+            .ToListAsync();
+
+        foreach (var token in tokens)
+            token.RevokedAt = DateTime.UtcNow;
+
+        // Audit log
+        _db.AuthAuditLogs.Add(new AuthAuditLog
+        {
+            UserId = user.UserId,
+            Action = "PasswordChanged",
+            IpAddress = ipAddress,
+            UserAgent = userAgent
+        });
+
+        await _db.SaveChangesAsync();
+    }
+
+    // =============================================
+    // HELPERS
+    // =============================================
+
     /// <summary>
     /// Generates a secure temporary password: 12 chars with uppercase, lowercase, digit, and special char.
     /// </summary>
@@ -295,5 +413,25 @@ public class AuthService : IAuthService
         }
 
         return new string(password);
+    }
+
+    /// <summary>
+    /// Generates a cryptographically secure 6-digit OTP.
+    /// </summary>
+    private static string GenerateOtp()
+    {
+        var bytes = new byte[4];
+        RandomNumberGenerator.Fill(bytes);
+        var code = BitConverter.ToUInt32(bytes) % 900000 + 100000; // 100000–999999
+        return code.ToString();
+    }
+
+    /// <summary>
+    /// Hashes an OTP string with SHA-256 (hex encoded).
+    /// </summary>
+    private static string HashOtp(string otp)
+    {
+        var bytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(otp));
+        return Convert.ToHexString(bytes);
     }
 }
