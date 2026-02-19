@@ -13,11 +13,7 @@ public class DapperContext : IDapperContext
     public DapperContext(IConfiguration configuration)
     {
         _configuration = configuration;
-        
-        var useShared = _configuration.GetValue<bool>("Infrastructure:UseSharedDatabase");
-        _connectionString = useShared 
-            ? _configuration.GetConnectionString("CoreDB_Shared")! 
-            : _configuration.GetConnectionString("CoreDB_Local")!;
+        _connectionString = _configuration.GetConnectionString("CoreDb")!;
     }
 
     public IDbConnection CreateConnection() 
