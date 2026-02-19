@@ -54,7 +54,7 @@ export default function Navbar() {
     return (
         <header
             className={`fixed top-0 w-full z-50 transition-all duration-500 ${isScrolled
-                ? "py-3 bg-[#050505]/80 backdrop-blur-xl shadow-2xl"
+                ? "py-3 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 shadow-2xl"
                 : "py-6 bg-transparent"
                 }`}
         >
@@ -75,20 +75,56 @@ export default function Navbar() {
                     {navItems.map((item, index) => {
                         const Icon = item.icon;
                         const isActive = pathname === item.href;
+                        const isHovered = hoveredIndex === index;
 
                         if (item.label === "Profile" && !isAuthenticated) return null;
 
                         return (
-                            <Link
+                            <div
                                 key={index}
-                                href={item.href}
-                                className={`flex items-center justify-center w-14 h-12 transition ${isActive
-                                    ? "text-emerald-400"
-                                    : "text-gray-400 hover:text-white"
-                                    }`}
+                                className="relative flex flex-col items-center"
+                                onMouseEnter={() => setHoveredIndex(index)}
+                                onMouseLeave={() => setHoveredIndex(null)}
                             >
-                                <Icon size={22} />
-                            </Link>
+                                <Link
+                                    href={item.href}
+                                    className="relative flex items-center justify-center w-14 h-12 group transition-colors"
+                                >
+                                    {isActive && (
+                                        <motion.div
+                                            layoutId="nav-glow"
+                                            className="absolute inset-0 bg-emerald-500/10 blur-md rounded-xl"
+                                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                        />
+                                    )}
+
+                                    <Icon
+                                        size={22}
+                                        className={`relative z-10 transition-all duration-300 ${isActive
+                                            ? "text-emerald-400 scale-110"
+                                            : "text-gray-400 group-hover:text-white"
+                                            }`}
+                                    />
+
+                                    {isActive && (
+                                        <motion.div
+                                            layoutId="active-bar"
+                                            className="absolute bottom-1 w-5 h-0.5 bg-emerald-500 rounded-full"
+                                        />
+                                    )}
+                                </Link>
+
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{
+                                        opacity: isHovered ? 1 : 0,
+                                        y: isHovered ? 0 : 10,
+                                    }}
+                                    className="absolute -bottom-10 text-[10px] font-bold tracking-widest uppercase text-emerald-400 bg-black/90 px-3 py-1.5 rounded border border-emerald-500/20 pointer-events-none whitespace-nowrap"
+                                >
+                                    {item.label}
+                                </motion.div>
+                            </div>
                         );
                     })}
                 </nav>
@@ -122,7 +158,7 @@ export default function Navbar() {
 
                         <Link
                             href="/login"
-                            className={`relative z-10 w-23 py-2 text-xs font-bold flex items-center justify-center gap-2 ${authMode === "login" ? "text-black" : "text-gray-400"
+                            className={`relative z-10 w-23 py-2 text-xs font-bold uppercase tracking-tighter flex items-center justify-center gap-2 transition-colors duration-300 ${authMode === "login" ? "text-black" : "text-gray-400 hover:text-white"
                                 }`}
                         >
                             <LogIn size={14} />
@@ -131,7 +167,7 @@ export default function Navbar() {
 
                         <Link
                             href="/register"
-                            className={`relative z-10 w-23 py-2 text-xs font-bold flex items-center justify-center gap-2 ${authMode === "signup" ? "text-black" : "text-gray-400"
+                            className={`relative z-10 w-23 py-2 text-xs font-bold uppercase tracking-tighter flex items-center justify-center gap-2 transition-colors duration-300 ${authMode === "signup" ? "text-black" : "text-gray-400 hover:text-white"
                                 }`}
                         >
                             <UserPlus size={14} />
@@ -142,10 +178,10 @@ export default function Navbar() {
 
                 {/* Mobile Menu Button */}
                 <button
+                    className="md:hidden p-2 text-gray-400 hover:text-white transition-colors"
                     onClick={() => setIsMobileOpen(!isMobileOpen)}
-                    className="md:hidden text-white"
                 >
-                    {isMobileOpen ? <X size={26} /> : <Menu size={26} />}
+                    {isMobileOpen ? <X size={24} /> : <Menu size={24} />}
                 </button>
             </div>
 
