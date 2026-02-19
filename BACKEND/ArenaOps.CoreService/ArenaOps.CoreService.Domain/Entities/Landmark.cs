@@ -4,7 +4,7 @@ public class Landmark
 {
     public Guid FeatureId { get; set; }
     public Guid SeatingPlanId { get; set; }
-    public string Type { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty; // STAGE, GATE, EXIT, RESTROOM, etc.
     public string? Label { get; set; }
     public double PosX { get; set; }
     public double PosY { get; set; }

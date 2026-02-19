@@ -9,6 +9,7 @@ public class SeatingPlan
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public bool IsActive { get; set; } = true;
 
+    // Navigation Properties
     public Stadium Stadium { get; set; } = null!;
     public ICollection<Section> Sections { get; set; } = new List<Section>();
     public ICollection<Landmark> Landmarks { get; set; } = new List<Landmark>();

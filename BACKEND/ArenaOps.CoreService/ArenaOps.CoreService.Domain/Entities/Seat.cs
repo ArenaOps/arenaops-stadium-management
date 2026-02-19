@@ -12,5 +12,6 @@ public class Seat
     public bool IsActive { get; set; } = true;
     public bool IsAccessible { get; set; }
 
+    // Navigation Properties
     public Section Section { get; set; } = null!;
 }

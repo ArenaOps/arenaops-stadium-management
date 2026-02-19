@@ -108,7 +108,7 @@ export function EventDiscovery() {
             </div>
 
             {/* Subtle light leak for depth */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-linear-to-r from-transparent via-primary/30 to-transparent" />
         </section>
     )
 }
