@@ -5,3 +5,27 @@
 /* Your styles */
 @use "./base";
 
+:root {
+  --btn-bg: #22c55e;
+  --btn-hover: #16a34a;
+  --btn-text: #ffffff;
+  --btn-outline: rgba(34,197,94,0.5);
+}
+
+[data-theme='morning'] {
+  --btn-bg: #1d4ed8;
+  --btn-hover: #1e40af;
+  --btn-outline: rgba(29,78,216,0.6);
+}
+
+[data-theme='evening'] {
+  --btn-bg: #f97316;
+  --btn-hover: #ea580c;
+  --btn-outline: rgba(249,115,22,0.6);
+}
+
+[data-theme='night'] {
+  --btn-bg: #22c55e;
+  --btn-hover: #16a34a;
+  --btn-outline: rgba(34,197,94,0.5);
+}
