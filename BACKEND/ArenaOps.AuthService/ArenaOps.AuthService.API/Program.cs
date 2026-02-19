@@ -10,11 +10,23 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
+try
+{
+    var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllers();
+    // 1. Configure Serilog
+    Log.Logger = new LoggerConfiguration()
+        .ReadFrom.Configuration(builder.Configuration)
+        .CreateLogger();
+
+    builder.Host.UseSerilog();
+
+    Log.Information("Starting ArenaOps AuthService API...");
+
+    // Add services to the container.
+    builder.Services.AddControllers();
 
 // Rate Limiting — prevent brute-force attacks on auth endpoints
 builder.Services.AddRateLimiter(options =>
@@ -80,6 +92,13 @@ builder.Services.AddSingleton<ITokenService, TokenService>();
 
 // Auth Service
 builder.Services.AddScoped<IAuthService, ArenaOps.AuthService.Infrastructure.Services.AuthService>();
+
+// Dapper Context
+builder.Services.AddSingleton<ArenaOps.AuthService.Core.Interfaces.IDapperContext, ArenaOps.AuthService.Infrastructure.Data.DapperContext>();
+
+// Health Checks
+builder.Services.AddHealthChecks()
+    .AddSqlServer(builder.Configuration.GetConnectionString("AuthDb")!, name: "Auth SQL Server");
 
 // Email Service (Mock — logs to console)
 builder.Services.AddSingleton<IEmailService, MockEmailService>();
@@ -179,6 +198,9 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
+// 2. Configure Serilog Request Logging
+app.UseSerilogRequestLogging();
+
 // Global exception handler — must be first in pipeline
 app.UseMiddleware<ArenaOps.AuthService.API.Middleware.GlobalExceptionHandlerMiddleware>();
 
@@ -211,6 +233,18 @@ app.UseMiddleware<ArenaOps.AuthService.API.Middleware.TokenBlacklistMiddleware>(
 
 app.UseAuthorization();
 
+app.MapHealthChecks("/health");
 app.MapControllers();
 
+
+
 app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "AuthService host terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
