@@ -1,202 +1,60 @@
-@use "sass:color";
-
-// Variables
-$stadium-bg: #020617;
-$field-green: #0a2e1c;
-$field-light-green: #1a4d2e;
-$light-color: #ffffff;
-$beam-color: rgba(255, 255, 255, 0.12);
-$primary-green: #3c990a;
-
 .heroContainer {
     position: relative;
     width: 100%;
     height: 100vh;
     overflow: hidden;
-    background-color: $stadium-bg;
-    background-image: radial-gradient(circle at 50% 120%, #0f172a 10%, $stadium-bg 70%);
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     perspective: 1200px;
+    
+    &[data-theme='morning'] {
+        h1:global(.text-transparent) {
+            background-image: linear-gradient(to bottom, #1146c2, #334155) !important;
+        }
+
+        p:global(.text-slate-300\/90) {
+            color: rgba(5, 19, 53, 0.7) !important;
+        }
+    }
+
+    &[data-theme='evening'] {
+  --badge-glow: rgba(251, 146, 60, 0.6);
+
+  h1:global(.text-transparent) {
+    background-image: linear-gradient(
+      to bottom,
+      #ffffff,
+      #ffe7c2,
+      #facc15
+    ) !important;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  p:global(.text-slate-300\/90) {
+    color: rgba(255, 235, 210, 0.85) !important;
+  }
 }
 
-// -----------------------------------------------------------------------------
-// Stadium Lights
-// -----------------------------------------------------------------------------
-.lightsContainer {
+    &[data-theme='night'] {
+        --footer-fade: #020617;
+        --badge-glow: rgba(59, 130, 246, 0.5);
+    }
+}
+
+.footerFade {
     position: absolute;
-    top: 0;
+    bottom: 0;
     left: 0;
     width: 100%;
-    height: 100%;
+    height: 160px;
+    background: linear-gradient(to top, var(--footer-fade), transparent);
     pointer-events: none;
-    z-index: 1;
+    z-index: 20;
+    transition: background 2s ease-in-out;
 }
 
-// -----------------------------------------------------------------------------
-// Realistic Stadium Floodlights
-// -----------------------------------------------------------------------------
-.lightAssembly {
-    position: absolute;
-    top: -20px;
-    width: 200px;
-    height: 150px;
-    z-index: 10;
-    pointer-events: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.leftAssembly {
-    left: 0;
-    transform: rotate(-40deg);
-    transform-origin: top center;
-}
-
-.rightAssembly {
-    right: 0;
-    transform: rotate(40deg);
-    transform-origin: top center;
-}
-
-.post {
-    position: absolute;
-    top: -100px;
-    width: 14px;
-    height: 180px;
-    background: linear-gradient(90deg, #050505, #111, #050505);
-    box-shadow: 2px 0 15px rgba(0, 0, 0, 0.7);
-    z-index: 1;
-}
-
-.lightFrame {
-    position: relative;
-    width: 140px;
-    height: 110px;
-    background: #0f172a;
-    border: 3px solid #1e293b;
-    border-radius: 4px;
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    grid-template-rows: repeat(5, 1fr);
-    gap: 4px;
-    padding: 8px;
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.9), inset 0 0 20px rgba(0, 0, 0, 0.5);
-    z-index: 2;
-    transform: rotateX(20deg); // Tilt down more
-}
-
-.lightPoint {
-    width: 100%;
-    height: 100%;
-    background: #fff;
-    border-radius: 50%;
-    box-shadow: 0 0 12px #fff, 0 0 25px rgba(255, 255, 255, 0.6);
-    opacity: 0.95;
-    animation: lightFlicker 10s infinite alternate;
-
-    &:nth-child(odd) {
-        animation-delay: 0.5s;
-    }
-}
-
-.frameGlow {
-    position: absolute;
-    inset: -30px;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.25) 0%, transparent 70%);
-    filter: blur(20px);
-    z-index: -1;
-}
-
-.mainBeam {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 800px; // Wider beam for better coverage
-    height: 1400px;
-    background: linear-gradient(180deg,
-            rgba(255, 255, 255, 0.22) 0%,
-            rgba(255, 255, 255, 0.08) 40%,
-            transparent 80%);
-    transform-origin: top center;
-    transform: translateX(-50%) rotate(5deg);
-    clip-path: polygon(42% 0%, 58% 0%, 100% 100%, 0% 100%);
-    mask-image: linear-gradient(to bottom, black, transparent 85%);
-    z-index: 0;
-    pointer-events: none;
-    opacity: 0.65;
-}
-
-@keyframes lightFlicker {
-
-    0%,
-    100% {
-        opacity: 0.9;
-        transform: scale(1);
-    }
-
-    50% {
-        opacity: 1;
-        transform: scale(1.08);
-    }
-}
-
-.centerSpotlight {
-    position: absolute;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at 50% 40%, rgba(60, 153, 10, 0.04) 0%, transparent 60%);
-    pointer-events: none;
-    z-index: 2;
-}
-
-// -----------------------------------------------------------------------------
-// Field Perspective
-// -----------------------------------------------------------------------------
-.fieldContainer {
-    position: absolute;
-    bottom: -30%;
-    width: 160%;
-    height: 80vh;
-    background: linear-gradient(180deg, color.scale($field-green, $lightness: -20%) 0%, $field-green 100%);
-    transform: rotateX(65deg);
-    transform-origin: center top;
-    box-shadow: 0 -50px 100px rgba(0, 0, 0, 0.8) inset;
-    z-index: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-
-    &::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background-image:
-            repeating-linear-gradient(90deg, transparent 0, transparent 99px, rgba(255, 255, 255, 0.05) 100px),
-            repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.05) 0, rgba(0, 0, 0, 0.05) 40px, transparent 40px, transparent 80px);
-        opacity: 0.4;
-    }
-    &::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 300px;
-        height: 300px;
-        border: 2px solid rgba(255, 255, 255, 0.1);
-        border-radius: 50%;
-        transform: translate(-50%, -50%);
-    }
-}
-
-// -----------------------------------------------------------------------------
-// Content & Overall
-// -----------------------------------------------------------------------------
 .contentLayer {
     position: relative;
     z-index: 10;
@@ -204,6 +62,8 @@ $primary-green: #3c990a;
     display: flex;
     flex-direction: column;
     align-items: center;
+    filter: brightness(var(--content-brightness));
+    transition: filter 2s ease-in-out;
 }
 
 .liveBadge {
@@ -211,17 +71,15 @@ $primary-green: #3c990a;
 }
 
 @keyframes pulseGlow {
-
-    0%,
-    100% {
+    0%, 100% {
         opacity: 0.7;
         transform: scale(1);
-        box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+        box-shadow: 0 0 10px var(--badge-glow);
     }
 
     50% {
         opacity: 1;
         transform: scale(1.05);
-        box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+        box-shadow: 0 0 20px var(--badge-glow);
     }
 }
