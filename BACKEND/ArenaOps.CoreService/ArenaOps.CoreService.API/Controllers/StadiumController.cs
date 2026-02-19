@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+<<<<<<< HEAD
 using ArenaOps.Shared.Models;
+=======
+>>>>>>> origin/main
 
 namespace ArenaOps.CoreService.API.Controllers;
 
@@ -13,7 +16,11 @@ public class StadiumController : ControllerBase
     [AllowAnonymous]
     public IActionResult Ping()
     {
+<<<<<<< HEAD
         return Ok(ApiResponse<object>.Ok(new { message = "pong", service = "CoreService" }));
+=======
+        return Ok(new { message = "pong", service = "CoreService" });
+>>>>>>> origin/main
     }
 
     [HttpGet("test")]
@@ -24,13 +31,18 @@ public class StadiumController : ControllerBase
         var userId = User.FindFirst("userId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var roles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
+<<<<<<< HEAD
         return Ok(ApiResponse<object>.Ok(new
+=======
+        return Ok(new
+>>>>>>> origin/main
         {
             message = "Success! You are authenticated on CoreService.",
             user = userName,
             userId = userId,
             roles = roles,
             claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList()
+<<<<<<< HEAD
         }));
     }
 
@@ -45,5 +57,8 @@ public class StadiumController : ControllerBase
             user = User.Identity?.Name,
             role = "StadiumOwner"
         }));
+=======
+        });
+>>>>>>> origin/main
     }
 }
