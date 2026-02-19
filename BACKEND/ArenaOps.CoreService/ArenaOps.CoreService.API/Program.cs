@@ -1,6 +1,10 @@
 using Serilog;
 using Microsoft.EntityFrameworkCore;
 using ArenaOps.CoreService.Infrastructure.Data;
+using ArenaOps.Shared.Middleware;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,9 +18,6 @@ builder.Host.UseSerilog();
 // 2. Database Connection (Hosted DB)
 var connectionString = builder.Configuration.GetConnectionString("CoreDb");
 
-// TODO: Re-add Redis when hosted Redis provider is configured
-// var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
-
 // 3. Register Services
 builder.Services.AddSingleton<ArenaOps.CoreService.Application.Interfaces.IDapperContext, ArenaOps.CoreService.Infrastructure.Data.DapperContext>();
 
@@ -24,23 +25,77 @@ builder.Services.AddSingleton<ArenaOps.CoreService.Application.Interfaces.IDappe
 builder.Services.AddDbContext<CoreDbContext>(options =>
     options.UseSqlServer(connectionString));
 
+// 3b. Configure Authentication (Using local RSA public key)
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var rsa = RSA.Create();
+        var keyPath = Path.Combine(builder.Environment.ContentRootPath, "Keys", "rsa-public.key");
+
+        if (File.Exists(keyPath))
+        {
+            var keyPem = File.ReadAllText(keyPath);
+            rsa.ImportFromPem(keyPem);
+        }
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = "ArenaOps",
+            ValidateAudience = true,
+            ValidAudience = "ArenaOps",
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new RsaSecurityKey(rsa),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+// 3c. Authorization
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("StadiumOwner", policy => policy.RequireRole("StadiumOwner"));
+});
+
+// 3d. Controllers
+builder.Services.AddControllers();
 
 // 4. Add Health Checks
 builder.Services.AddHealthChecks()
     .AddSqlServer(connectionString!, name: "SQL Server");
-    // TODO: Re-add Redis health check when hosted Redis is available
-    // .AddRedis(redisConnectionString!, name: "Redis");
+
+// 5. CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "https://localhost:3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
 
 var app = builder.Build();
 
-// 5. Configure the HTTP request pipeline
+// 6. Configure the HTTP request pipeline.
 app.UseSerilogRequestLogging();
+app.UseCors("AllowFrontend");
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+
 app.UseHttpsRedirection();
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+app.UseAuthentication();
+app.UseAuthorization();
 
-// 6. Map Health Check endpoint
+// 7. Map Endpoints
 app.MapHealthChecks("/health");
-
 app.MapGet("/", () => "ArenaOps CoreService API is running.");
+app.MapControllers();
 
 try
 {
