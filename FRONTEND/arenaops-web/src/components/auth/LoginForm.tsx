@@ -179,8 +179,13 @@ export default function LoginForm() {
             )}
           </div>
 
-          <div className="text-right text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-[#10b981] cursor-pointer transition-colors">
-            Reset Credentials?
+          <div className="text-right">
+            <Link
+              href="/forgot-password"
+              className="text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-[#10b981] transition-colors"
+            >
+              Reset Credentials?
+            </Link>
           </div>
 
           {error && (
