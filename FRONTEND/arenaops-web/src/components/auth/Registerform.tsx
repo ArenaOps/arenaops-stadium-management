@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import Link from "next/link";
 import { Eye, EyeOff, UserCircle, Mail, Lock, ShieldCheck, Chrome } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 interface FormState {
   errors: {
@@ -113,9 +114,16 @@ export default function RegisterForm() {
     const result = await dispatch(registerUser({ email, password, fullName: name }));
 
     if (registerUser.fulfilled.match(result)) {
+      toast.success("Registration successful! Welcome aboard.");
       localStorage.removeItem("reg_name");
       localStorage.removeItem("reg_email");
       router.push("/");
+    } else {
+      if (result.payload) {
+        toast.error(result.payload as string);
+      } else {
+        toast.error("Registration failed. Please try again.");
+      }
     }
   };
 
@@ -124,7 +132,7 @@ export default function RegisterForm() {
       ref={containerRef}
       className="w-[85vw] max-w-250 min-h-125 bg-[#050505] rounded-[2.5rem] shadow-[0_0_80px_rgba(16,185,129,0.1)] overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-white/5"
     >
-      <div className="form-panel flex flex-col justify-center px-12 lg:px-20 py-12 order-2 lg:order-1 bg-[#0a0a0a]">
+      <div className="form-panel flex flex-col justify-center px-12 lg:px-20 py-12 order-2 lg:order-1 bg-[#050505]">
         <div className="mb-10">
           <h2 className="text-5xl font-black text-white italic tracking-tighter uppercase mb-2">
             Register<span className="text-[#10b981]">.</span>
@@ -223,6 +231,19 @@ export default function RegisterForm() {
               <span className="text-xs font-bold uppercase tracking-widest">Continue with Google</span>
             </button>
           </div>
+        </div>
+
+        {/* Mobile Navigation - Only visible on small screens */}
+        <div className="mt-8 text-center lg:hidden border-t border-white/5 pt-6">
+          <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-3">
+            Already have a Scout ID?
+          </p>
+          <Link
+            href="/login"
+            className="text-[#10b981] text-xs font-black uppercase tracking-[0.2em] hover:text-white transition-colors flex items-center justify-center gap-2"
+          >
+            Access Login <Eye size={14} />
+          </Link>
         </div>
       </div>
 
