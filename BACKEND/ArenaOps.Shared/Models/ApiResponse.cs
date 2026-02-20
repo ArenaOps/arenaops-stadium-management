@@ -1,4 +1,4 @@
-namespace ArenaOps.AuthService.Core.Models;
+namespace ArenaOps.Shared.Models;
 
 public class ApiResponse<T>
 {

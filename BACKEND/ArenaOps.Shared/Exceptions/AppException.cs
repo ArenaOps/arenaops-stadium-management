@@ -1,4 +1,4 @@
-namespace ArenaOps.AuthService.Core.Exceptions;
+namespace ArenaOps.Shared.Exceptions;
 
 /// <summary>
 /// Base exception for all application-level errors.

@@ -2,9 +2,11 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading.RateLimiting;
 using ArenaOps.AuthService.Core.Interfaces;
+using ArenaOps.Shared.Models;
 using ArenaOps.AuthService.Core.Models;
 using ArenaOps.AuthService.Infrastructure.Data;
 using ArenaOps.AuthService.Infrastructure.Services;
+using ArenaOps.Shared.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -202,7 +204,7 @@ var app = builder.Build();
 app.UseSerilogRequestLogging();
 
 // Global exception handler — must be first in pipeline
-app.UseMiddleware<ArenaOps.AuthService.API.Middleware.GlobalExceptionHandlerMiddleware>();
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
