@@ -178,7 +178,7 @@ export default function Navbar() {
 
                 {/* Mobile Menu Toggle */}
                 <button
-                    className="md:hidden p-2 text-gray-300 hover:text-white transition-colors"
+                    className="md:hidden p-2 text-gray-400 hover:text-white transition-colors"
                     onClick={() => setIsMobileOpen(!isMobileOpen)}
                 >
                     {isMobileOpen ? <X size={24} /> : <Menu size={24} />}

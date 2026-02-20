@@ -1,8 +1,9 @@
 using System.Security.Cryptography;
 using ArenaOps.AuthService.Core.DTOs;
 using ArenaOps.AuthService.Core.Entities;
-using ArenaOps.AuthService.Core.Exceptions;
+using ArenaOps.Shared.Exceptions;
 using ArenaOps.AuthService.Core.Interfaces;
+using ArenaOps.Shared.Models;
 using ArenaOps.AuthService.Core.Models;
 using ArenaOps.AuthService.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;

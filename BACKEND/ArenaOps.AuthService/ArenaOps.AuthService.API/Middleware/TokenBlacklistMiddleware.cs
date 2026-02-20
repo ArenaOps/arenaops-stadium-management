@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using ArenaOps.AuthService.Core.Interfaces;
+using ArenaOps.Shared.Models;
 using ArenaOps.AuthService.Core.Models;
 
 namespace ArenaOps.AuthService.API.Middleware;

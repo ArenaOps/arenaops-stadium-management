@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using ArenaOps.AuthService.Core.Entities;
 using ArenaOps.AuthService.Core.Interfaces;
+using ArenaOps.Shared.Models;
 using ArenaOps.AuthService.Core.Models;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;

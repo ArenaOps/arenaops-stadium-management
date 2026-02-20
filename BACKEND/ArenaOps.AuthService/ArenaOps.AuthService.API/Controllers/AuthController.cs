@@ -2,12 +2,14 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
 using ArenaOps.AuthService.Core.DTOs;
 using ArenaOps.AuthService.Core.Interfaces;
+using ArenaOps.Shared.Models;
 using ArenaOps.AuthService.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using ArenaOps.Shared.Exceptions;
 
 namespace ArenaOps.AuthService.API.Controllers;
 
@@ -81,7 +83,7 @@ public class AuthController : ControllerBase
             Request.Cookies.TryGetValue("refreshToken", out token);
 
         if (string.IsNullOrEmpty(token))
-            throw new Core.Exceptions.BadRequestException("MISSING_REFRESH_TOKEN",
+            throw new BadRequestException("MISSING_REFRESH_TOKEN",
                 "Refresh token is required (via cookie or request body).");
 
         return token;
@@ -281,7 +283,7 @@ public class AuthController : ControllerBase
             ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            throw new Core.Exceptions.UnauthorizedException("INVALID_TOKEN", "Could not identify user from token.");
+            throw new UnauthorizedException("INVALID_TOKEN", "Could not identify user from token.");
 
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
         var ua = Request.Headers.UserAgent.ToString();
