@@ -72,6 +72,25 @@ export const logoutUser = createAsyncThunk(
     }
 );
 
+export const googleLoginUser = createAsyncThunk(
+    "auth/googleLogin",
+    async ({ code, redirectUri }: { code: string; redirectUri: string }, { rejectWithValue }) => {
+        try {
+            const response = await authService.googleLogin(code, redirectUri);
+            if (response.success) {
+                localStorage.setItem("accessToken", response.data.accessToken);
+                localStorage.setItem("refreshToken", response.data.refreshToken);
+                localStorage.setItem("user", JSON.stringify(response.data));
+                return response.data;
+            } else {
+                return rejectWithValue(response.message || "Google login failed");
+            }
+        } catch (err: any) {
+            return rejectWithValue(err.response?.data?.message || err.message || "Google login failed");
+        }
+    }
+);
+
 const authSlice = createSlice({
     name: "auth",
     initialState,
@@ -140,6 +159,22 @@ const authSlice = createSlice({
             state.user = null;
             state.isAuthenticated = false;
             state.error = null;
+        });
+
+        // Google Login
+        builder.addCase(googleLoginUser.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(googleLoginUser.fulfilled, (state, action) => {
+            state.loading = false;
+            state.user = action.payload;
+            state.isAuthenticated = true;
+            state.error = null;
+        });
+        builder.addCase(googleLoginUser.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.payload as string;
         });
     },
 });

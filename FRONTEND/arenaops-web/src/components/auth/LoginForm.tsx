@@ -7,7 +7,8 @@ import { loginUser } from "@/app/store/authSlice";
 import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import Link from "next/link";
-import { Github, Chrome, Twitter } from "lucide-react";
+import { Chrome, Eye, EyeOff } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 interface FormState {
   errors: {
@@ -22,8 +23,10 @@ export default function LoginForm() {
   const router = useRouter();
   const { loading, error, isAuthenticated } = useSelector((state: RootState) => state.auth);
 
+
   // Local state for form errors since we are moving away from useActionState for simplicity with Thunks
   const [formErrors, setFormErrors] = useState<FormState["errors"]>({});
+  const [showPassword, setShowPassword] = useState(false);
 
   // Redirect if authenticated
   if (isAuthenticated) {
@@ -91,7 +94,14 @@ export default function LoginForm() {
     const result = await dispatch(loginUser({ email, password }));
 
     if (loginUser.fulfilled.match(result)) {
+      toast.success("Welcome back to the Arena!");
       router.push("/");
+    } else {
+      if (result.payload) {
+        toast.error(result.payload as string);
+      } else {
+        toast.error("Login failed. Check your credentials.");
+      }
     }
   };
 
@@ -147,14 +157,21 @@ export default function LoginForm() {
             )}
           </div>
 
-          <div className="input-field">
+          <div className="input-field relative">
             <input
               name="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="CLEARANCE PASSWORD"
-              className={`w-full px-5 py-4 rounded-xl bg-[#111827] text-white border border-white/5 outline-none focus:border-[#10b981] transition-all text-xs font-bold tracking-widest placeholder:text-gray-600 ${formErrors.password ? "border-red-500/50 ring-1 ring-red-500/20" : ""
+              className={`w-full px-5 py-4 pr-12 rounded-xl bg-[#111827] text-white border border-white/5 outline-none focus:border-[#10b981] transition-all text-xs font-bold tracking-widest placeholder:text-gray-600 ${formErrors.password ? "border-red-500/50 ring-1 ring-red-500/20" : ""
                 }`}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-4 text-gray-500 hover:text-[#10b981] transition-colors"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
             {formErrors.password && (
               <p className="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-tighter">
                 {formErrors.password}
@@ -186,19 +203,29 @@ export default function LoginForm() {
         </div>
 
         <div className="flex justify-center gap-4">
-          {[
-            { icon: <Chrome size={18} />, label: "G", action: handleGoogleLogin },
-            { icon: <Github size={18} />, label: "Git", action: () => { } },
-            { icon: <Twitter size={18} />, label: "X", action: () => { } },
-          ].map((item, i) => (
-            <div
-              key={i}
-              onClick={item.action}
-              className="w-12 h-12 flex items-center justify-center bg-[#111827] border border-white/5 rounded-full text-white hover:text-[#10b981] hover:border-[#10b981]/50 transition-all cursor-pointer shadow-lg"
+          <div className="flex justify-center w-full">
+            <button
+              onClick={handleGoogleLogin}
+              className="w-full py-4 rounded-xl border border-white/10 bg-[#111827] text-white hover:bg-[#1f2937] transition-all flex items-center justify-center gap-3 group relative overflow-hidden"
             >
-              {item.icon}
-            </div>
-          ))}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              <Chrome size={20} className="text-[#10b981]" />
+              <span className="text-xs font-bold uppercase tracking-widest">Continue with Google</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Navigation - Only visible on small screens */}
+        <div className="mt-8 text-center lg:hidden border-t border-white/5 pt-6">
+          <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-3">
+            Secure clearance for ArenaOps
+          </p>
+          <Link
+            href="/register"
+            className="text-[#10b981] text-xs font-black uppercase tracking-[0.2em] hover:text-white transition-colors flex items-center justify-center gap-2"
+          >
+            Create Account <Eye size={14} />
+          </Link>
         </div>
       </div>
     </div>
