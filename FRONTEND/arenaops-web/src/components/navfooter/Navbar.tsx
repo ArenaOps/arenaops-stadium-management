@@ -35,6 +35,7 @@ export default function Navbar() {
     const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
     const [isScrolled, setIsScrolled] = useState(false);
+    const [isMobileOpen, setIsMobileOpen] = useState(false);
 
     const { scrollY } = useScroll();
 
@@ -53,8 +54,8 @@ export default function Navbar() {
     return (
         <header
             className={`fixed top-0 w-full z-50 transition-all duration-500 ${isScrolled
-                    ? "py-3 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 shadow-2xl"
-                    : "py-6 bg-transparent"
+                ? "py-3 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 shadow-2xl"
+                : "py-6 bg-transparent"
                 }`}
         >
             <div className="flex items-center justify-between max-w-7xl mx-auto px-6 md:px-8">
@@ -74,11 +75,12 @@ export default function Navbar() {
                     {navItems.map((item, index) => {
                         const Icon = item.icon;
                         const isActive = pathname === item.href;
+                        const isHovered = hoveredIndex === index;
 
                         if (item.label === "Profile" && !isAuthenticated) return null;
 
                         return (
-                            <Link
+                            <div
                                 key={index}
                                 className="relative flex flex-col items-center"
                                 onMouseEnter={() => setHoveredIndex(index)}
@@ -99,8 +101,8 @@ export default function Navbar() {
                                     <Icon
                                         size={22}
                                         className={`relative z-10 transition-all duration-300 ${isActive
-                                                ? "text-emerald-400 scale-110"
-                                                : "text-gray-400 group-hover:text-white"
+                                            ? "text-emerald-400 scale-110"
+                                            : "text-gray-400 group-hover:text-white"
                                             }`}
                                     />
 
@@ -172,6 +174,15 @@ export default function Navbar() {
                             Join
                         </Link>
                     </div>
+                )}
+
+                {/* Mobile Menu Toggle */}
+                <button
+                    className="md:hidden p-2 text-gray-300 hover:text-white transition-colors"
+                    onClick={() => setIsMobileOpen(!isMobileOpen)}
+                >
+                    {isMobileOpen ? <X size={24} /> : <Menu size={24} />}
+                </button>
             </div>
 
             {/* Mobile Drawer */}

@@ -7,7 +7,7 @@ import { loginUser } from "@/app/store/authSlice";
 import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import Link from "next/link";
-import { Github, Chrome, Twitter } from "lucide-react";
+import { Chrome } from "lucide-react";
 
 interface FormState {
   errors: {
@@ -186,19 +186,16 @@ export default function LoginForm() {
         </div>
 
         <div className="flex justify-center gap-4">
-          {[
-            { icon: <Chrome size={18} />, label: "G", action: handleGoogleLogin },
-            { icon: <Github size={18} />, label: "Git", action: () => { } },
-            { icon: <Twitter size={18} />, label: "X", action: () => { } },
-          ].map((item, i) => (
-            <div
-              key={i}
-              onClick={item.action}
-              className="w-12 h-12 flex items-center justify-center bg-[#111827] border border-white/5 rounded-full text-white hover:text-[#10b981] hover:border-[#10b981]/50 transition-all cursor-pointer shadow-lg"
+          <div className="flex justify-center w-full">
+            <button
+              onClick={handleGoogleLogin}
+              className="w-full py-4 rounded-xl border border-white/10 bg-[#111827] text-white hover:bg-[#1f2937] transition-all flex items-center justify-center gap-3 group relative overflow-hidden"
             >
-              {item.icon}
-            </div>
-          ))}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              <Chrome size={20} className="text-[#10b981]" />
+              <span className="text-xs font-bold uppercase tracking-widest">Continue with Google</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

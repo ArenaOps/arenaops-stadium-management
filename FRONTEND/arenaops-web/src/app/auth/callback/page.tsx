@@ -2,56 +2,49 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { authService } from "@/services/authService"; // You might need to export this or use the slice thunk
-import { useDispatch } from "react-redux";
-import { loginSuccess, loginFailure } from "@/app/store/authSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { googleLoginUser, loginFailure } from "@/app/store/authSlice";
+import { RootState } from "@/app/store/store";
 
 export default function AuthCallbackPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<any>();
     const processedRef = useRef(false);
+    const { loading, error } = useSelector((state: RootState) => state.auth);
 
     useEffect(() => {
         if (processedRef.current) return;
-        processedRef.current = true;
 
         const code = searchParams.get("code");
-        const error = searchParams.get("error");
+        const urlError = searchParams.get("error");
 
-        if (error) {
-            console.error("Google Auth Error:", error);
+        if (urlError) {
+            console.error("Google Auth Error:", urlError);
             dispatch(loginFailure("Google authentication failed"));
             router.push("/login");
+            processedRef.current = true;
             return;
         }
 
         if (code) {
-            // Exchange code for token
+            processedRef.current = true;
             const redirectUri = window.location.origin + "/auth/callback";
 
-            authService.googleLogin(code, redirectUri)
-                .then((data) => {
-                    if (data.success) {
-                        // Manually storing in localStorage as per authSlice pattern
-                        localStorage.setItem("accessToken", data.data.accessToken);
-                        localStorage.setItem("refreshToken", data.data.refreshToken);
-                        localStorage.setItem("user", JSON.stringify(data.data));
-
-                        dispatch(loginSuccess(data.data)); // You might need to adjust payload to match your slice
-                        router.push("/");
-                    } else {
-                        dispatch(loginFailure(data.message || "Google login failed"));
-                        router.push("/login");
-                    }
+            dispatch(googleLoginUser({ code, redirectUri }))
+                .unwrap()
+                .then(() => {
+                    router.push("/");
                 })
-                .catch((err) => {
-                    console.error("Google Auth Exception:", err);
-                    dispatch(loginFailure("Google login failed"));
-                    router.push("/login");
+                .catch((err: any) => {
+                    console.error("Google Auth Failed:", err);
+                    router.push("/login"); // or show error state
                 });
         } else {
-            router.push("/login");
+            // No code, no error -> just redirect
+            if (!processedRef.current) {
+                router.push("/login");
+            }
         }
     }, [searchParams, router, dispatch]);
 
@@ -59,7 +52,10 @@ export default function AuthCallbackPage() {
         <div className="min-h-screen flex items-center justify-center bg-black text-white">
             <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-                <p className="font-bold tracking-widest uppercase text-sm animate-pulse">Authenticating with Google...</p>
+                <p className="font-bold tracking-widest uppercase text-sm animate-pulse">
+                    {loading ? "Verifying Google Credentials..." : "Authenticating..."}
+                </p>
+                {error && <p className="text-red-500 mt-2 text-xs">{error}</p>}
             </div>
         </div>
     );
