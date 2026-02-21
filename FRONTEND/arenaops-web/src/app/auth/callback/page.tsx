@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { googleLoginUser, loginFailure } from "@/app/store/authSlice";
 import { RootState } from "@/app/store/store";
-import { useToastActions } from "@/components/ui/toast";
+import { toast } from "react-hot-toast";
 
 export default function AuthCallbackPage() {
     const router = useRouter();
@@ -13,7 +13,6 @@ export default function AuthCallbackPage() {
     const dispatch = useDispatch<any>();
     const processedRef = useRef(false);
     const { loading, error } = useSelector((state: RootState) => state.auth);
-    const { success, error: showError } = useToastActions();
 
     useEffect(() => {
         if (processedRef.current) return;
@@ -23,7 +22,7 @@ export default function AuthCallbackPage() {
 
         if (urlError) {
             console.error("Google Auth Error:", urlError);
-            showError("Google authentication failed. Please try again.");
+            toast.error("Google authentication failed. Please try again.");
             dispatch(loginFailure("Google authentication failed"));
             router.push("/login");
             processedRef.current = true;
@@ -37,12 +36,12 @@ export default function AuthCallbackPage() {
             dispatch(googleLoginUser({ code, redirectUri }))
                 .unwrap()
                 .then(() => {
-                    success("Google Login successful!");
+                    toast.success("Google Login successful!");
                     router.push("/");
                 })
                 .catch((err: any) => {
                     console.error("Google Auth Failed:", err);
-                    showError(err || "Google login failed.");
+                    toast.error(err || "Google login failed.");
                     router.push("/login"); // or show error state
                 });
         } else {

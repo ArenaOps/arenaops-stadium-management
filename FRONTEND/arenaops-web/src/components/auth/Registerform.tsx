@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import Link from "next/link";
 import { Eye, EyeOff, UserCircle, Mail, Lock, ShieldCheck, Chrome } from "lucide-react";
-import { useToastActions } from "@/components/ui/toast";
+import { toast } from "react-hot-toast";
 
 interface FormState {
   errors: {
@@ -34,8 +34,6 @@ export default function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [formErrors, setFormErrors] = useState<FormState["errors"]>({});
-
-  const { success, error: showError } = useToastActions();
 
   // Redirect if authenticated
   if (isAuthenticated) {
@@ -116,15 +114,15 @@ export default function RegisterForm() {
     const result = await dispatch(registerUser({ email, password, fullName: name }));
 
     if (registerUser.fulfilled.match(result)) {
-      success("Registration successful! Welcome aboard.");
+      toast.success("Registration successful! Welcome aboard.");
       localStorage.removeItem("reg_name");
       localStorage.removeItem("reg_email");
       router.push("/");
     } else {
       if (result.payload) {
-        showError(result.payload as string);
+        toast.error(result.payload as string);
       } else {
-        showError("Registration failed. Please try again.");
+        toast.error("Registration failed. Please try again.");
       }
     }
   };
@@ -228,7 +226,7 @@ export default function RegisterForm() {
               onClick={handleGoogleLogin}
               className="w-full py-4 rounded-xl border border-white/10 bg-[#111827] text-white hover:bg-[#1f2937] transition-all flex items-center justify-center gap-3 group relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
               <Chrome size={20} className="text-[#10b981]" />
               <span className="text-xs font-bold uppercase tracking-widest">Continue with Google</span>
             </button>

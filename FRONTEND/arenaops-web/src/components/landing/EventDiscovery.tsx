@@ -1,10 +1,8 @@
-"use client"
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Calendar, MapPin, Users, ArrowRight } from "lucide-react"
 import styles from "./EventDiscovery.module.scss"
 import { cn } from "@/lib/utils"
-import Link from "next/link"
 
 // Mock Data for Placeholder
 const mockEvents = [
@@ -41,7 +39,6 @@ const mockEvents = [
 ]
 
 export function EventDiscovery() {
-
     return (
         <section className={styles.eventDiscoverySection}>
             <div className="container mx-auto px-6 relative z-10">
@@ -98,14 +95,12 @@ export function EventDiscovery() {
                             </CardContent>
 
                             <CardFooter className="pt-2">
-                                <Link href={`/events/${event.id}`}>
                                 <Button
                                     className={cn("w-full h-12 text-sm font-bold uppercase tracking-widest", styles.bookButton)}
                                     variant="outline"
-                                    >
+                                >
                                     Book Tickets
                                 </Button>
-                                    </Link>
                             </CardFooter>
                         </Card>
                     ))}
