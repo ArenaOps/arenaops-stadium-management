@@ -1,7 +1,11 @@
 using ArenaOps.CoreService.Application.DTOs;
 using ArenaOps.CoreService.Application.Interfaces;
 using ArenaOps.CoreService.Domain.Entities;
-using ArenaOps.Shared.Exceptions;
+using ArenaOps.Shared.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ArenaOps.CoreService.Infrastructure.Services;
 
@@ -14,32 +18,35 @@ public class SeatingPlanService : ISeatingPlanService
         _repository = repository;
     }
 
-    public async Task<SeatingPlanResponse?> GetByIdAsync(Guid seatingPlanId, CancellationToken cancellationToken = default)
+    public async Task<ApiResponse<SeatingPlanResponse>> GetByIdAsync(Guid seatingPlanId, CancellationToken cancellationToken = default)
     {
         var seatingPlan = await _repository.GetByIdAsync(seatingPlanId, cancellationToken);
-        return seatingPlan == null ? null : MapToResponse(seatingPlan);
+        if (seatingPlan == null)
+            return ApiResponse<SeatingPlanResponse>.Fail("NOT_FOUND", "Seating plan not found");
+
+        return ApiResponse<SeatingPlanResponse>.Ok(MapToResponse(seatingPlan));
     }
 
-    public async Task<IEnumerable<SeatingPlanResponse>> GetByStadiumIdAsync(Guid stadiumId, CancellationToken cancellationToken = default)
+    public async Task<ApiResponse<IEnumerable<SeatingPlanResponse>>> GetByStadiumIdAsync(Guid stadiumId, CancellationToken cancellationToken = default)
     {
         var seatingPlans = await _repository.GetByStadiumIdAsync(stadiumId, cancellationToken);
-        return seatingPlans.Select(MapToResponse);
+        var dtos = seatingPlans.Select(MapToResponse);
+        return ApiResponse<IEnumerable<SeatingPlanResponse>>.Ok(dtos);
     }
 
-    public async Task<IEnumerable<SeatingPlanResponse>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<ApiResponse<IEnumerable<SeatingPlanResponse>>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var seatingPlans = await _repository.GetAllAsync(cancellationToken);
-        return seatingPlans.Select(MapToResponse);
+        var dtos = seatingPlans.Select(MapToResponse);
+        return ApiResponse<IEnumerable<SeatingPlanResponse>>.Ok(dtos);
     }
 
-    public async Task<SeatingPlanResponse> CreateAsync(CreateSeatingPlanRequest request, Guid ownerId, CancellationToken cancellationToken = default)
+    public async Task<ApiResponse<SeatingPlanResponse>> CreateAsync(CreateSeatingPlanRequest request, Guid ownerId, CancellationToken cancellationToken = default)
     {
         // Verify stadium exists
         var stadiumExists = await _repository.StadiumExistsAsync(request.StadiumId, cancellationToken);
         if (!stadiumExists)
-        {
-            throw new NotFoundException("STADIUM_NOT_FOUND", "Stadium not found");
-        }
+            return ApiResponse<SeatingPlanResponse>.Fail("STADIUM_NOT_FOUND", "Stadium not found");
 
         var seatingPlan = new SeatingPlan
         {
@@ -52,16 +59,14 @@ public class SeatingPlanService : ISeatingPlanService
         };
 
         var created = await _repository.CreateAsync(seatingPlan, cancellationToken);
-        return MapToResponse(created);
+        return ApiResponse<SeatingPlanResponse>.Ok(MapToResponse(created), "Seating plan created successfully");
     }
 
-    public async Task<SeatingPlanResponse> UpdateAsync(Guid seatingPlanId, UpdateSeatingPlanRequest request, Guid ownerId, CancellationToken cancellationToken = default)
+    public async Task<ApiResponse<SeatingPlanResponse>> UpdateAsync(Guid seatingPlanId, UpdateSeatingPlanRequest request, Guid ownerId, CancellationToken cancellationToken = default)
     {
         var seatingPlan = await _repository.GetByIdAsync(seatingPlanId, cancellationToken);
         if (seatingPlan == null)
-        {
-            throw new NotFoundException("SEATING_PLAN_NOT_FOUND", "Seating plan not found");
-        }
+            return ApiResponse<SeatingPlanResponse>.Fail("NOT_FOUND", "Seating plan not found");
 
         // Update properties
         seatingPlan.Name = request.Name;
@@ -72,18 +77,20 @@ public class SeatingPlanService : ISeatingPlanService
         }
 
         var updated = await _repository.UpdateAsync(seatingPlan, cancellationToken);
-        return MapToResponse(updated);
+        return ApiResponse<SeatingPlanResponse>.Ok(MapToResponse(updated), "Seating plan updated successfully");
     }
 
-    public async Task<bool> DeleteAsync(Guid seatingPlanId, Guid ownerId, CancellationToken cancellationToken = default)
+    public async Task<ApiResponse<object>> DeleteAsync(Guid seatingPlanId, Guid ownerId, CancellationToken cancellationToken = default)
     {
         var seatingPlan = await _repository.GetByIdAsync(seatingPlanId, cancellationToken);
         if (seatingPlan == null)
-        {
-            throw new NotFoundException("SEATING_PLAN_NOT_FOUND", "Seating plan not found");
-        }
+            return ApiResponse<object>.Fail("NOT_FOUND", "Seating plan not found");
 
-        return await _repository.DeleteAsync(seatingPlanId, cancellationToken);
+        var deleted = await _repository.DeleteAsync(seatingPlanId, cancellationToken);
+        if (!deleted)
+            return ApiResponse<object>.Fail("DELETE_FAILED", "Could not delete seating plan");
+
+        return ApiResponse<object>.Ok(new { }, "Seating plan deleted successfully");
     }
 
     private static SeatingPlanResponse MapToResponse(SeatingPlan seatingPlan)

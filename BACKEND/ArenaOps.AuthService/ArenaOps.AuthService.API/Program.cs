@@ -88,6 +88,9 @@ builder.Services.AddDbContext<AuthDbContext>(options =>
         sqlOptions => sqlOptions.MigrationsAssembly("ArenaOps.AuthService.Infrastructure")
     ));
 
+// Repositories
+builder.Services.AddScoped<IAuthRepository, ArenaOps.AuthService.Infrastructure.Repositories.AuthRepository>();
+
 // JWT Configuration
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddSingleton<ITokenService, TokenService>();

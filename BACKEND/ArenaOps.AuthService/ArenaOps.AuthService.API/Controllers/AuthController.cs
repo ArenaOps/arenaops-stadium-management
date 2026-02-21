@@ -199,11 +199,11 @@ public class AuthController : ControllerBase
 
         // Delete refresh token from DB
         var refreshToken = GetRefreshToken(request?.RefreshToken);
-        await _authService.LogoutAsync(refreshToken);
+        var response = await _authService.LogoutAsync(refreshToken);
 
         // Clear cookies
         ClearAuthCookies();
-        return Ok(ApiResponse<object>.Ok(new { }, "Logged out successfully"));
+        return Ok(response);
     }
 
     // =============================================
@@ -223,11 +223,14 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CreateStadiumManager([FromBody] CreateStadiumManagerRequest request)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ApiResponse<object>.Fail("VALIDATION_ERROR", "Invalid request data"));
+
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
         var ua = Request.Headers.UserAgent.ToString();
 
-        var result = await _authService.CreateStadiumManagerAsync(request, ip, ua);
-        return Ok(ApiResponse<CreateStadiumManagerResponse>.Ok(result, "Stadium Manager created successfully"));
+        var response = await _authService.CreateStadiumManagerAsync(request, ip, ua);
+        return Ok(response);
     }
 
     // =============================================
@@ -244,8 +247,8 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
     {
-        await _authService.ForgotPasswordAsync(request.Email);
-        return Ok(ApiResponse<object>.Ok(new { }, "If the email exists, a reset code has been sent."));
+        var response = await _authService.ForgotPasswordAsync(request.Email);
+        return Ok(response);
     }
 
     /// <summary>
@@ -259,12 +262,18 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ApiResponse<object>.Fail("VALIDATION_ERROR", "Invalid request data"));
+
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
         var ua = Request.Headers.UserAgent.ToString();
 
-        await _authService.ResetPasswordAsync(request, ip, ua);
-        ClearAuthCookies();
-        return Ok(ApiResponse<object>.Ok(new { }, "Password has been reset successfully."));
+        var response = await _authService.ResetPasswordAsync(request, ip, ua);
+        if (response.Success)
+        {
+            ClearAuthCookies();
+        }
+        return Ok(response);
     }
 
     /// <summary>
@@ -279,18 +288,24 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ApiResponse<object>.Fail("VALIDATION_ERROR", "Invalid request data"));
+
         var userIdClaim = User.FindFirst("userId")?.Value
             ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            throw new UnauthorizedException("INVALID_TOKEN", "Could not identify user from token.");
+            return Unauthorized(ApiResponse<object>.Fail("UNAUTHORIZED", "Could not identify user from token."));
 
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
         var ua = Request.Headers.UserAgent.ToString();
 
-        await _authService.ChangePasswordAsync(userId, request, ip, ua);
-        ClearAuthCookies();
-        return Ok(ApiResponse<object>.Ok(new { }, "Password changed successfully."));
+        var response = await _authService.ChangePasswordAsync(userId, request, ip, ua);
+        if (response.Success)
+        {
+            ClearAuthCookies();
+        }
+        return Ok(response);
     }
 
     // =============================================
