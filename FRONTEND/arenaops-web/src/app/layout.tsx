@@ -4,7 +4,6 @@ import "@/styles/tailwind.css";
 import "@/styles/globals.scss";
 import Providers from "../providers/providers";
 import ClientLayout from "@/components/layout/ClientLayout";
-import CustomCursor from "@/components/ui/CursorPointer";
 
 // Primary font for body text
 const inter = Inter({
@@ -36,7 +35,6 @@ export default function RootLayout({
         className={`${inter.variable} ${outfit.variable} font-sans antialiased bg-background text-foreground`}
       >
         <Providers>
-          <CustomCursor/>
           <ClientLayout>{children}</ClientLayout>
         </Providers>
       </body>

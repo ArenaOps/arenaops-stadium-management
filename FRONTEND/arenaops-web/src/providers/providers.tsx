@@ -4,6 +4,7 @@ import { Provider } from "react-redux";
 import { store } from "@/app/store/store";
 import { useEffect } from "react";
 import { initializeAuth } from "@/app/store/authSlice";
+import { ToastProvider, ToastContainer, ErrorBoundary } from "@/components/ui";
 
 function AuthInitializer({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -19,8 +20,13 @@ export default function Providers({
   children: React.ReactNode;
 }) {
   return (
-    <Provider store={store}>
-      <AuthInitializer>{children}</AuthInitializer>
-    </Provider>
+    <ErrorBoundary errorTitle="Application Error">
+      <Provider store={store}>
+        <ToastProvider>
+          <AuthInitializer>{children}</AuthInitializer>
+          <ToastContainer />
+        </ToastProvider>
+      </Provider>
+    </ErrorBoundary>
   );
 }
