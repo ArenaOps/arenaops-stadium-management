@@ -110,7 +110,7 @@
 
 ### Backend 2 (Primary)
 
-- Implement Stadium APIs (POST/GET/PUT)
+- [x] Implement Stadium CRUD APIs (POST/GET/PUT)
 - Implement SeatingPlan APIs (POST/GET)
 - Implement Section APIs with Type field (Seated/Standing)
 - Implement Seat APIs (POST/GET/bulk generate — Seated sections only)
