@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import Link from "next/link";
 import { Chrome, Eye, EyeOff } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { useToastActions } from "@/components/ui/toast";
 
 interface FormState {
   errors: {
@@ -18,11 +18,12 @@ interface FormState {
 }
 
 export default function LoginForm() {
+const { success, error: showError } = useToastActions();
+
   const containerRef = useRef<HTMLDivElement>(null);
-  const dispatch = useDispatch<any>(); // Type dispatch for thunk
+  const dispatch = useDispatch<any>(); 
   const router = useRouter();
   const { loading, error, isAuthenticated } = useSelector((state: RootState) => state.auth);
-
 
   // Local state for form errors since we are moving away from useActionState for simplicity with Thunks
   const [formErrors, setFormErrors] = useState<FormState["errors"]>({});
@@ -94,15 +95,15 @@ export default function LoginForm() {
     const result = await dispatch(loginUser({ email, password }));
 
     if (loginUser.fulfilled.match(result)) {
-      toast.success("Welcome back to the Arena!");
-      router.push("/");
-    } else {
-      if (result.payload) {
-        toast.error(result.payload as string);
-      } else {
-        toast.error("Login failed. Check your credentials.");
-      }
-    }
+  success("Welcome back to the Arena!");
+  router.push("/");
+} else {
+  if (result.payload) {
+    showError(result.payload as string);
+  } else {
+    showError("Login failed. Check your credentials.");
+  }
+}
   };
 
   return (
