@@ -4,16 +4,17 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { resetPassword } from "@/app/store/authSlice";
 import { RootState } from "@/app/store/store";
-import { toast } from "react-hot-toast";
 import Link from "next/link";
 import { Key, Eye, EyeOff, Lock, Hash } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useToastActions } from "@/components/ui/toast";
 
 export default function ResetPasswordPage() {
     const dispatch = useDispatch<any>();
     const router = useRouter();
     const searchParams = useSearchParams();
     const { loading } = useSelector((state: RootState) => state.auth);
+    const { success, error: showError } = useToastActions();
 
     const [email, setEmail] = useState("");
     const [otp, setOtp] = useState("");
@@ -32,7 +33,7 @@ export default function ResetPasswordPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email || !otp || !newPassword) {
-            toast.error("All fields (Email, OTP, New Password) are required.");
+            showError("All fields (Email, OTP, New Password) are required.");
             return;
         }
 
@@ -40,7 +41,7 @@ export default function ResetPasswordPage() {
 
         if (resetPassword.fulfilled.match(result)) {
             setSubmitted(true);
-            toast.success("Password reset successful!");
+            success("Password reset successful!");
             // Redirect after a short delay
             setTimeout(() => {
                 router.push("/login");
@@ -48,10 +49,10 @@ export default function ResetPasswordPage() {
         } else {
             if (result.payload) {
                 setError(result.payload as string);
-                toast.error(result.payload as string);
+                showError(result.payload as string);
             } else {
                 setError("Failed to reset password.");
-                toast.error("Failed to reset password.");
+                showError("Failed to reset password.");
             }
         }
     };

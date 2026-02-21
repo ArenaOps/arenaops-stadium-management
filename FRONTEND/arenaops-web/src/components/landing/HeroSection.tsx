@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import styles from "./HeroSection.module.scss";
 import { Button } from "@/components/ui/Button";
-import { Ticket, PlayCircle } from "lucide-react";
+import { PlayCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 type Theme = "morning" | "evening" | "night";
 
 export function HeroSection() {
+  
   const getCurrentTheme = (): Theme => {
     const hour = new Date().getHours();
     if (hour >= 6 && hour < 16) return "morning";
@@ -93,22 +95,7 @@ useEffect(() => {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-6 justify-center items-center w-full sm:w-auto mb-16 animate-fade-in-up delay-200 z-50">
-          <Button
-            size="lg"
-            className="
-  h-14 px-10 text-lg font-semibold
- bg-(--btn-bg)
-hover:bg-(--btn-hover)
-text-(--btn-text)
-border-(--btn-outline)
-  shadow-lg
-  hover:shadow-xl
-  transition-all duration-300
-  border-none rounded-full cursor-pointer
-  "
-          >
-            Book Tickets <Ticket className="ml-2 h-5 w-5" />
-          </Button>
+          <Link href={"/events"}>
           <Button
   variant="outline"
   size="lg"
@@ -126,10 +113,9 @@ border-(--btn-outline)
             Explore Events
             <PlayCircle className="ml-2 h-5 w-5 transition-colors group-hover:text-current" />
           </Button>
+          </Link>
         </div>
       </div>
-
-      {/* Bottom Gradient Fade for seamless transition to Event Discovery */}
       <div className={styles.footerFade} />
     </section>
   );
