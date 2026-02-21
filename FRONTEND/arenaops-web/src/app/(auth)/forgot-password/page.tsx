@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { forgotPassword } from "@/app/store/authSlice";
 import { RootState } from "@/app/store/store";
-import { toast } from "react-hot-toast";
 import Link from "next/link";
 import { Mail, ArrowLeft } from "lucide-react";
+import { useToastActions } from "@/components/ui/toast";
 
 export default function ForgotPasswordPage() {
     const dispatch = useDispatch<any>();
@@ -14,28 +14,29 @@ export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("");
     const [submitted, setSubmitted] = useState(false);
 
+    const { success, error: showError } = useToastActions();
+
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!email) {
-            toast.error("Please enter your email address.");
-            return;
-        }
+    e.preventDefault();
 
-        const result = await dispatch(forgotPassword(email));
+    if (!email) {
+        showError("Please enter your email address.");
+        return;
+    }
 
-        // The backend always returns 200 OK for security reasons (except for strict rate limiting)
-        // So we treat it as success if it doesn't throw a major error.
-        if (forgotPassword.fulfilled.match(result)) {
-            setSubmitted(true);
-            toast.success("If an account exists, a reset code has been sent.");
+    const result = await dispatch(forgotPassword(email));
+
+    if (forgotPassword.fulfilled.match(result)) {
+        setSubmitted(true);
+        success("If an account exists, a reset code has been sent.");
+    } else {
+        if (result.payload) {
+            showError(result.payload as string);
         } else {
-            if (result.payload) {
-                toast.error(result.payload as string);
-            } else {
-                toast.error("Request failed. Please try again.");
-            }
+            showError("Request failed. Please try again.");
         }
-    };
+    }
+};
 
     return (
         <div className="min-h-screen w-full flex items-center justify-center bg-black text-white p-4">
