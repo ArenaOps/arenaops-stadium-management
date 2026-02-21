@@ -5,26 +5,24 @@ using ArenaOps.Shared.Exceptions;
 using ArenaOps.AuthService.Core.Interfaces;
 using ArenaOps.Shared.Models;
 using ArenaOps.AuthService.Core.Models;
-using ArenaOps.AuthService.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace ArenaOps.AuthService.Infrastructure.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly AuthDbContext _db;
+    private readonly IAuthRepository _repo;
     private readonly ITokenService _tokenService;
     private readonly IEmailService _emailService;
     private readonly JwtSettings _jwtSettings;
 
     public AuthService(
-        AuthDbContext db,
+        IAuthRepository repo,
         ITokenService tokenService,
         IEmailService emailService,
         IOptions<JwtSettings> jwtSettings)
     {
-        _db = db;
+        _repo = repo;
         _tokenService = tokenService;
         _emailService = emailService;
         _jwtSettings = jwtSettings.Value;
@@ -32,7 +30,8 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request, string? ipAddress, string? userAgent)
     {
-        if (await _db.Users.AnyAsync(u => u.Email == request.Email))
+        var existingUser = await _repo.GetUserByEmailAsync(request.Email);
+        if (existingUser != null)
             throw new ConflictException("EMAIL_EXISTS", "An account with this email already exists.");
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
@@ -47,31 +46,32 @@ public class AuthService : IAuthService
             IsActive = true
         };
 
-        _db.Users.Add(user);
-        await _db.SaveChangesAsync();
+        await _repo.AddUserAsync(user);
+        await _repo.SaveChangesAsync();
 
         // SECURITY: Only "User" and "Organizer" are allowed via self-registration.
-        // Admin, StadiumOwner are created via dedicated admin endpoints only.
         var allowedSelfRegisterRoles = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "User", "Organizer" };
         var roleName = !string.IsNullOrEmpty(request.Role) && allowedSelfRegisterRoles.Contains(request.Role)
             ? request.Role
             : "User";
 
-        var role = await _db.Roles.FirstAsync(r => r.Name == roleName);
-        _db.UserRoles.Add(new UserRole { UserId = user.UserId, RoleId = role.RoleId });
-        await _db.SaveChangesAsync();
+        var role = await _repo.GetRoleByNameAsync(roleName);
+        if (role == null) throw new Exception("ROLE_NOT_FOUND: Default role not found");
+
+        await _repo.AddUserRoleAsync(new UserRole { UserId = user.UserId, RoleId = role.RoleId });
+        await _repo.SaveChangesAsync();
 
         var roles = new List<string> { roleName };
         var tokenResult = _tokenService.GenerateTokens(user, roles);
 
-        _db.RefreshTokens.Add(new RefreshToken
+        await _repo.AddRefreshTokenAsync(new RefreshToken
         {
             UserId = user.UserId,
             Token = tokenResult.RefreshToken,
             ExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiryDays)
         });
 
-        _db.AuthAuditLogs.Add(new AuthAuditLog
+        await _repo.AddAuthAuditLogAsync(new AuthAuditLog
         {
             UserId = user.UserId,
             Action = "Register",
@@ -79,7 +79,7 @@ public class AuthService : IAuthService
             UserAgent = userAgent
         });
 
-        await _db.SaveChangesAsync();
+        await _repo.SaveChangesAsync();
 
         return new AuthResponse
         {
@@ -93,10 +93,7 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request, string? ipAddress, string? userAgent)
     {
-        var user = await _db.Users
-            .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
-            .FirstOrDefaultAsync(u => u.Email == request.Email);
+        var user = await _repo.GetUserByEmailAsync(request.Email);
 
         if (user == null || string.IsNullOrEmpty(user.PasswordHash))
         {
@@ -116,14 +113,14 @@ public class AuthService : IAuthService
         var roles = user.UserRoles.Select(ur => ur.Role.Name).ToList();
         var tokenResult = _tokenService.GenerateTokens(user, roles);
 
-        _db.RefreshTokens.Add(new RefreshToken
+        await _repo.AddRefreshTokenAsync(new RefreshToken
         {
             UserId = user.UserId,
             Token = tokenResult.RefreshToken,
             ExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiryDays)
         });
 
-        _db.AuthAuditLogs.Add(new AuthAuditLog
+        await _repo.AddAuthAuditLogAsync(new AuthAuditLog
         {
             UserId = user.UserId,
             Action = "Login",
@@ -132,7 +129,7 @@ public class AuthService : IAuthService
         });
 
         user.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        await _repo.SaveChangesAsync();
 
         return new AuthResponse
         {
@@ -146,11 +143,7 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> RefreshTokenAsync(string refreshToken)
     {
-        var storedToken = await _db.RefreshTokens
-            .Include(rt => rt.User)
-                .ThenInclude(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
-            .FirstOrDefaultAsync(rt => rt.Token == refreshToken)
+        var storedToken = await _repo.GetRefreshTokenAsync(refreshToken)
             ?? throw new UnauthorizedException("INVALID_REFRESH_TOKEN", "Refresh token is invalid.");
 
         if (storedToken.RevokedAt != null)
@@ -166,14 +159,14 @@ public class AuthService : IAuthService
         storedToken.RevokedAt = DateTime.UtcNow;
         storedToken.ReplacedByToken = tokenResult.RefreshToken;
 
-        _db.RefreshTokens.Add(new RefreshToken
+        await _repo.AddRefreshTokenAsync(new RefreshToken
         {
             UserId = user.UserId,
             Token = tokenResult.RefreshToken,
             ExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiryDays)
         });
 
-        await _db.SaveChangesAsync();
+        await _repo.SaveChangesAsync();
 
         return new AuthResponse
         {
@@ -185,30 +178,26 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task LogoutAsync(string refreshToken)
+    public async Task<ApiResponse<object>> LogoutAsync(string refreshToken)
     {
-        var storedToken = await _db.RefreshTokens
-            .FirstOrDefaultAsync(rt => rt.Token == refreshToken);
+        var storedToken = await _repo.GetRefreshTokenAsync(refreshToken);
 
-        if (storedToken == null)
-            return;
+        if (storedToken != null)
+        {
+            storedToken.RevokedAt = DateTime.UtcNow;
+            await _repo.SaveChangesAsync();
+        }
 
-        // Remove the token from the database entirely
-        _db.RefreshTokens.Remove(storedToken);
-        await _db.SaveChangesAsync();
+        return ApiResponse<object>.Ok(new { }, "Logged out successfully");
     }
 
-    /// <summary>
-    /// Admin-only: Creates a Stadium Manager (StadiumOwner role) with a generated temporary password.
-    /// Sends the credentials via IEmailService.
-    /// </summary>
-    public async Task<CreateStadiumManagerResponse> CreateStadiumManagerAsync(
+    public async Task<ApiResponse<CreateStadiumManagerResponse>> CreateStadiumManagerAsync(
         CreateStadiumManagerRequest request, string? ipAddress, string? userAgent)
     {
-        if (await _db.Users.AnyAsync(u => u.Email == request.Email))
-            throw new ConflictException("EMAIL_EXISTS", "An account with this email already exists.");
+        var existingUser = await _repo.GetUserByEmailAsync(request.Email);
+        if (existingUser != null)
+            return ApiResponse<CreateStadiumManagerResponse>.Fail("EMAIL_EXISTS", "An account with this email already exists.");
 
-        // Generate a secure temporary password
         var tempPassword = GenerateTemporaryPassword();
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(tempPassword);
 
@@ -223,15 +212,15 @@ public class AuthService : IAuthService
             IsActive = true
         };
 
-        _db.Users.Add(user);
-        await _db.SaveChangesAsync();
+        await _repo.AddUserAsync(user);
+        await _repo.SaveChangesAsync();
 
-        // Assign StadiumOwner role
-        var role = await _db.Roles.FirstAsync(r => r.Name == "StadiumOwner");
-        _db.UserRoles.Add(new UserRole { UserId = user.UserId, RoleId = role.RoleId });
+        var role = await _repo.GetRoleByNameAsync("StadiumOwner");
+        if (role == null) throw new Exception("ROLE_NOT_FOUND: StadiumOwner role not found");
 
-        // Audit log
-        _db.AuthAuditLogs.Add(new AuthAuditLog
+        await _repo.AddUserRoleAsync(new UserRole { UserId = user.UserId, RoleId = role.RoleId });
+
+        await _repo.AddAuthAuditLogAsync(new AuthAuditLog
         {
             UserId = user.UserId,
             Action = "StadiumManagerCreated",
@@ -239,12 +228,10 @@ public class AuthService : IAuthService
             UserAgent = userAgent
         });
 
-        await _db.SaveChangesAsync();
-
-        // Send credentials via email (mock for now)
+        await _repo.SaveChangesAsync();
         await _emailService.SendStadiumManagerCredentialsAsync(request.Email, request.FullName, tempPassword);
 
-        return new CreateStadiumManagerResponse
+        var data = new CreateStadiumManagerResponse
         {
             UserId = user.UserId,
             Email = user.Email,
@@ -252,81 +239,66 @@ public class AuthService : IAuthService
             Role = "StadiumOwner",
             Message = "Stadium Manager account created. Temporary password sent to their email."
         };
+
+        return ApiResponse<CreateStadiumManagerResponse>.Ok(data, "Account created successfully");
     }
 
     private async Task AuditFailedLoginAsync(string email, string? ipAddress, string? userAgent, Guid? userId = null)
     {
-        _db.AuthAuditLogs.Add(new AuthAuditLog
+        await _repo.AddAuthAuditLogAsync(new AuthAuditLog
         {
             UserId = userId ?? Guid.Empty,
             Action = "FailedLogin",
             IpAddress = ipAddress,
             UserAgent = userAgent
         });
-        await _db.SaveChangesAsync();
+        await _repo.SaveChangesAsync();
     }
 
-    // =============================================
-    // FORGOT PASSWORD — generate OTP, hash, email
-    // =============================================
-    public async Task ForgotPasswordAsync(string email)
+    public async Task<ApiResponse<object>> ForgotPasswordAsync(string email)
     {
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+        var user = await _repo.GetUserByEmailAsync(email);
 
-        // Always return silently — prevents email enumeration
-        if (user == null || !user.IsActive)
-            return;
+        if (user != null && user.IsActive)
+        {
+            var otp = GenerateOtp();
+            user.PasswordResetOtpHash = HashOtp(otp);
+            user.PasswordResetOtpExpiresAt = DateTime.UtcNow.AddMinutes(15);
+            user.UpdatedAt = DateTime.UtcNow;
 
-        var otp = GenerateOtp();
-        user.PasswordResetOtpHash = HashOtp(otp);
-        user.PasswordResetOtpExpiresAt = DateTime.UtcNow.AddMinutes(15);
-        user.UpdatedAt = DateTime.UtcNow;
+            await _repo.SaveChangesAsync();
+            await _emailService.SendPasswordResetEmailAsync(email, otp);
+        }
 
-        await _db.SaveChangesAsync();
-
-        // Send the raw OTP via email (mock logs it to console)
-        await _emailService.SendPasswordResetEmailAsync(email, otp);
+        return ApiResponse<object>.Ok(new { }, "If your email is registered, you will receive a password reset link.");
     }
 
-    // =============================================
-    // RESET PASSWORD — verify OTP, set new password
-    // =============================================
-    public async Task ResetPasswordAsync(ResetPasswordRequest request, string? ipAddress, string? userAgent)
+    public async Task<ApiResponse<object>> ResetPasswordAsync(ResetPasswordRequest request, string? ipAddress, string? userAgent)
     {
-        var user = await _db.Users
-            .FirstOrDefaultAsync(u => u.Email == request.Email)
-            ?? throw new BadRequestException("INVALID_OTP", "Invalid or expired OTP.");
+        var user = await _repo.GetUserByEmailAsync(request.Email);
+        if (user == null)
+            return ApiResponse<object>.Fail("INVALID_OTP", "Invalid or expired OTP.");
 
-        // Validate OTP
         if (string.IsNullOrEmpty(user.PasswordResetOtpHash) ||
             user.PasswordResetOtpExpiresAt == null ||
             user.PasswordResetOtpExpiresAt < DateTime.UtcNow)
         {
-            throw new BadRequestException("INVALID_OTP", "Invalid or expired OTP.");
+            return ApiResponse<object>.Fail("INVALID_OTP", "Invalid or expired OTP.");
         }
 
-        var providedHash = HashOtp(request.Otp);
-        if (user.PasswordResetOtpHash != providedHash)
-        {
-            throw new BadRequestException("INVALID_OTP", "Invalid or expired OTP.");
-        }
+        if (user.PasswordResetOtpHash != HashOtp(request.Otp))
+            return ApiResponse<object>.Fail("INVALID_OTP", "Invalid or expired OTP.");
 
-        // Update password
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
         user.PasswordResetOtpHash = null;
         user.PasswordResetOtpExpiresAt = null;
         user.UpdatedAt = DateTime.UtcNow;
 
-        // Revoke all refresh tokens (force re-login everywhere)
-        var tokens = await _db.RefreshTokens
-            .Where(rt => rt.UserId == user.UserId && rt.RevokedAt == null)
-            .ToListAsync();
-
+        var tokens = await _repo.GetActiveRefreshTokensByUserIdAsync(user.UserId);
         foreach (var token in tokens)
             token.RevokedAt = DateTime.UtcNow;
 
-        // Audit log
-        _db.AuthAuditLogs.Add(new AuthAuditLog
+        await _repo.AddAuthAuditLogAsync(new AuthAuditLog
         {
             UserId = user.UserId,
             Action = "PasswordReset",
@@ -334,36 +306,30 @@ public class AuthService : IAuthService
             UserAgent = userAgent
         });
 
-        await _db.SaveChangesAsync();
+        await _repo.SaveChangesAsync();
+        return ApiResponse<object>.Ok(new { }, "Password reset successfully");
     }
 
-    // =============================================
-    // CHANGE PASSWORD — authenticated, current + new
-    // =============================================
-    public async Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request, string? ipAddress, string? userAgent)
+    public async Task<ApiResponse<object>> ChangePasswordAsync(Guid userId, ChangePasswordRequest request, string? ipAddress, string? userAgent)
     {
-        var user = await _db.Users.FindAsync(userId)
-            ?? throw new NotFoundException("USER_NOT_FOUND", "User not found.");
+        var user = await _repo.GetUserByIdAsync(userId);
+        if (user == null)
+            return ApiResponse<object>.Fail("USER_NOT_FOUND", "User not found.");
 
         if (string.IsNullOrEmpty(user.PasswordHash))
-            throw new BadRequestException("NO_PASSWORD", "This account uses external login. Set a password via forgot-password first.");
+            return ApiResponse<object>.Fail("NO_PASSWORD", "This account uses external login.");
 
         if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
-            throw new UnauthorizedException("WRONG_PASSWORD", "Current password is incorrect.");
+            return ApiResponse<object>.Fail("WRONG_PASSWORD", "Current password is incorrect.");
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
         user.UpdatedAt = DateTime.UtcNow;
 
-        // Revoke all refresh tokens (force re-login everywhere)
-        var tokens = await _db.RefreshTokens
-            .Where(rt => rt.UserId == user.UserId && rt.RevokedAt == null)
-            .ToListAsync();
-
+        var tokens = await _repo.GetActiveRefreshTokensByUserIdAsync(user.UserId);
         foreach (var token in tokens)
             token.RevokedAt = DateTime.UtcNow;
 
-        // Audit log
-        _db.AuthAuditLogs.Add(new AuthAuditLog
+        await _repo.AddAuthAuditLogAsync(new AuthAuditLog
         {
             UserId = user.UserId,
             Action = "PasswordChanged",
@@ -371,16 +337,10 @@ public class AuthService : IAuthService
             UserAgent = userAgent
         });
 
-        await _db.SaveChangesAsync();
+        await _repo.SaveChangesAsync();
+        return ApiResponse<object>.Ok(new { }, "Password changed successfully");
     }
 
-    // =============================================
-    // HELPERS
-    // =============================================
-
-    /// <summary>
-    /// Generates a secure temporary password: 12 chars with uppercase, lowercase, digit, and special char.
-    /// </summary>
     private static string GenerateTemporaryPassword()
     {
         const string uppercase = "ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -394,17 +354,14 @@ public class AuthService : IAuthService
         var bytes = new byte[12];
         rng.GetBytes(bytes);
 
-        // Ensure at least one of each type
         password[0] = uppercase[bytes[0] % uppercase.Length];
         password[1] = lowercase[bytes[1] % lowercase.Length];
         password[2] = digits[bytes[2] % digits.Length];
         password[3] = special[bytes[3] % special.Length];
 
-        // Fill remaining with random chars
         for (int i = 4; i < 12; i++)
             password[i] = allChars[bytes[i] % allChars.Length];
 
-        // Shuffle using Fisher-Yates
         var shuffleBytes = new byte[12];
         rng.GetBytes(shuffleBytes);
         for (int i = password.Length - 1; i > 0; i--)
@@ -416,20 +373,14 @@ public class AuthService : IAuthService
         return new string(password);
     }
 
-    /// <summary>
-    /// Generates a cryptographically secure 6-digit OTP.
-    /// </summary>
     private static string GenerateOtp()
     {
         var bytes = new byte[4];
         RandomNumberGenerator.Fill(bytes);
-        var code = BitConverter.ToUInt32(bytes) % 900000 + 100000; // 100000–999999
+        var code = BitConverter.ToUInt32(bytes) % 900000 + 100000;
         return code.ToString();
     }
 
-    /// <summary>
-    /// Hashes an OTP string with SHA-256 (hex encoded).
-    /// </summary>
     private static string HashOtp(string otp)
     {
         var bytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(otp));

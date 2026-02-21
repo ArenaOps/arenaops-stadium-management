@@ -23,9 +23,11 @@ builder.Services.AddSingleton<ArenaOps.CoreService.Application.Interfaces.IDappe
 
 // Repositories
 builder.Services.AddScoped<ArenaOps.CoreService.Application.Interfaces.ISeatingPlanRepository, ArenaOps.CoreService.Infrastructure.Repositories.SeatingPlanRepository>();
+builder.Services.AddScoped<ArenaOps.CoreService.Application.Interfaces.IStadiumRepository, ArenaOps.CoreService.Infrastructure.Repositories.StadiumRepository>();
 
 // Services
 builder.Services.AddScoped<ArenaOps.CoreService.Application.Interfaces.ISeatingPlanService, ArenaOps.CoreService.Infrastructure.Services.SeatingPlanService>();
+builder.Services.AddScoped<ArenaOps.CoreService.Application.Interfaces.IStadiumService, ArenaOps.CoreService.Infrastructure.Services.StadiumService>();
 
 // 3a. Register EF Core DbContext
 builder.Services.AddDbContext<CoreDbContext>(options =>

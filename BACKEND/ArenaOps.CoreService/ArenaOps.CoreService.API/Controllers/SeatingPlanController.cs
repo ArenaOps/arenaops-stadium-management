@@ -26,8 +26,8 @@ public class SeatingPlanController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
-        var seatingPlans = await _seatingPlanService.GetAllAsync(cancellationToken);
-        return Ok(ApiResponse<IEnumerable<SeatingPlanResponse>>.Ok(seatingPlans, "Seating plans retrieved successfully"));
+        var response = await _seatingPlanService.GetAllAsync(cancellationToken);
+        return Ok(response);
     }
 
     /// <summary>
@@ -36,13 +36,8 @@ public class SeatingPlanController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var seatingPlan = await _seatingPlanService.GetByIdAsync(id, cancellationToken);
-        if (seatingPlan == null)
-        {
-            throw new NotFoundException("SEATING_PLAN_NOT_FOUND", "Seating plan not found");
-        }
-
-        return Ok(ApiResponse<SeatingPlanResponse>.Ok(seatingPlan, "Seating plan retrieved successfully"));
+        var response = await _seatingPlanService.GetByIdAsync(id, cancellationToken);
+        return Ok(response);
     }
 
     /// <summary>
@@ -51,8 +46,8 @@ public class SeatingPlanController : ControllerBase
     [HttpGet("stadium/{stadiumId:guid}")]
     public async Task<IActionResult> GetByStadiumId(Guid stadiumId, CancellationToken cancellationToken)
     {
-        var seatingPlans = await _seatingPlanService.GetByStadiumIdAsync(stadiumId, cancellationToken);
-        return Ok(ApiResponse<IEnumerable<SeatingPlanResponse>>.Ok(seatingPlans, "Seating plans retrieved successfully"));
+        var response = await _seatingPlanService.GetByStadiumIdAsync(stadiumId, cancellationToken);
+        return Ok(response);
     }
 
     /// <summary>
@@ -64,16 +59,16 @@ public class SeatingPlanController : ControllerBase
     {
         if (!ModelState.IsValid)
         {
-            throw new BadRequestException("VALIDATION_ERROR", "Invalid request data");
+            return BadRequest(ApiResponse<object>.Fail("VALIDATION_ERROR", "Invalid request data"));
         }
 
         var userId = GetUserId();
-        var seatingPlan = await _seatingPlanService.CreateAsync(request, userId, cancellationToken);
+        var response = await _seatingPlanService.CreateAsync(request, userId, cancellationToken);
         
         return CreatedAtAction(
             nameof(GetById), 
-            new { id = seatingPlan.SeatingPlanId }, 
-            ApiResponse<SeatingPlanResponse>.Ok(seatingPlan, "Seating plan created successfully")
+            new { id = response.Data?.SeatingPlanId }, 
+            response
         );
     }
 
@@ -86,13 +81,13 @@ public class SeatingPlanController : ControllerBase
     {
         if (!ModelState.IsValid)
         {
-            throw new BadRequestException("VALIDATION_ERROR", "Invalid request data");
+            return BadRequest(ApiResponse<object>.Fail("VALIDATION_ERROR", "Invalid request data"));
         }
 
         var userId = GetUserId();
-        var seatingPlan = await _seatingPlanService.UpdateAsync(id, request, userId, cancellationToken);
+        var response = await _seatingPlanService.UpdateAsync(id, request, userId, cancellationToken);
         
-        return Ok(ApiResponse<SeatingPlanResponse>.Ok(seatingPlan, "Seating plan updated successfully"));
+        return Ok(response);
     }
 
     /// <summary>
@@ -103,9 +98,9 @@ public class SeatingPlanController : ControllerBase
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var userId = GetUserId();
-        await _seatingPlanService.DeleteAsync(id, userId, cancellationToken);
+        var response = await _seatingPlanService.DeleteAsync(id, userId, cancellationToken);
         
-        return Ok(ApiResponse<object>.Ok(new { }, "Seating plan deleted successfully"));
+        return Ok(response);
     }
 
     private Guid GetUserId()
