@@ -31,6 +31,9 @@ node_modules/
 .env
 .env.local
 .env.*.local
+appsettings.Development.json
+*.log
+Logs/
 
 # RSA private keys
 Keys/

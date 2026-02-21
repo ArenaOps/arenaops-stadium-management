@@ -20,9 +20,12 @@ var connectionString = builder.Configuration.GetConnectionString("CoreDb");
 
 // 3. Register Services
 builder.Services.AddSingleton<ArenaOps.CoreService.Application.Interfaces.IDapperContext, ArenaOps.CoreService.Infrastructure.Data.DapperContext>();
-builder.Services.AddScoped<ArenaOps.CoreService.Application.Interfaces.IStadiumRepository, ArenaOps.CoreService.Infrastructure.Repositories.StadiumRepository>();
-builder.Services.AddScoped<ArenaOps.CoreService.Application.Interfaces.IStadiumService, ArenaOps.CoreService.Infrastructure.Services.StadiumService>();
-builder.Services.AddScoped<ArenaOps.CoreService.Application.Interfaces.IDapperQueryService, ArenaOps.CoreService.Infrastructure.Data.DapperQueryService>();
+
+// Repositories
+builder.Services.AddScoped<ArenaOps.CoreService.Application.Interfaces.ISeatingPlanRepository, ArenaOps.CoreService.Infrastructure.Repositories.SeatingPlanRepository>();
+
+// Services
+builder.Services.AddScoped<ArenaOps.CoreService.Application.Interfaces.ISeatingPlanService, ArenaOps.CoreService.Infrastructure.Services.SeatingPlanService>();
 
 // 3a. Register EF Core DbContext
 builder.Services.AddDbContext<CoreDbContext>(options =>
