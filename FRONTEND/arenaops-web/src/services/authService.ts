@@ -33,6 +33,12 @@ export interface RefreshPayload {
     refreshToken: string;
 }
 
+export interface ResetPasswordPayload {
+    email: string;
+    otp: string;
+    newPassword: string;
+}
+
 export const authService = {
     login: async (payload: LoginPayload): Promise<AuthResponse> => {
         const response = await api.post<AuthResponse>('/api/auth/login', payload);
@@ -56,6 +62,16 @@ export const authService = {
 
     googleLogin: async (code: string, redirectUri: string): Promise<AuthResponse> => {
         const response = await api.post<AuthResponse>('/api/auth/google', { code, redirectUri });
+        return response.data;
+    },
+
+    forgotPassword: async (email: string): Promise<{ success: boolean; message: string }> => {
+        const response = await api.post('/api/auth/forgot-password', { email });
+        return response.data;
+    },
+
+    resetPassword: async (payload: ResetPasswordPayload): Promise<{ success: boolean; message: string }> => {
+        const response = await api.post('/api/auth/reset-password', payload);
         return response.data;
     }
 };

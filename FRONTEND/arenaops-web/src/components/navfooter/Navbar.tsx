@@ -176,7 +176,7 @@ export default function Navbar() {
                     </div>
                 )}
 
-                {/* Mobile Menu Button */}
+                {/* Mobile Menu Toggle */}
                 <button
                     className="md:hidden p-2 text-gray-400 hover:text-white transition-colors"
                     onClick={() => setIsMobileOpen(!isMobileOpen)}

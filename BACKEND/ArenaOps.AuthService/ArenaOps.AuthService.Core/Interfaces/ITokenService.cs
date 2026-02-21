@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
 using ArenaOps.AuthService.Core.Entities;
+using ArenaOps.Shared.Models;
 using ArenaOps.AuthService.Core.Models;
 
 namespace ArenaOps.AuthService.Core.Interfaces;

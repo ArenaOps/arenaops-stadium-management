@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { authService, LoginPayload, RegisterPayload, UserData } from "@/services/authService";
+import { authService, LoginPayload, RegisterPayload, UserData, ResetPasswordPayload } from "@/services/authService";
 
 interface AuthState {
     loading: boolean;
@@ -72,6 +72,49 @@ export const logoutUser = createAsyncThunk(
     }
 );
 
+export const googleLoginUser = createAsyncThunk(
+    "auth/googleLogin",
+    async ({ code, redirectUri }: { code: string; redirectUri: string }, { rejectWithValue }) => {
+        try {
+            const response = await authService.googleLogin(code, redirectUri);
+            if (response.success) {
+                localStorage.setItem("accessToken", response.data.accessToken);
+                localStorage.setItem("refreshToken", response.data.refreshToken);
+                localStorage.setItem("user", JSON.stringify(response.data));
+                return response.data;
+            } else {
+                return rejectWithValue(response.message || "Google login failed");
+            }
+        } catch (err: any) {
+            return rejectWithValue(err.response?.data?.message || err.message || "Google login failed");
+        }
+    }
+);
+
+export const forgotPassword = createAsyncThunk(
+    "auth/forgotPassword",
+    async (email: string, { rejectWithValue }) => {
+        try {
+            const response = await authService.forgotPassword(email);
+            return response;
+        } catch (err: any) {
+            return rejectWithValue(err.response?.data?.message || err.message || "Failed to send reset email");
+        }
+    }
+);
+
+export const resetPassword = createAsyncThunk(
+    "auth/resetPassword",
+    async (payload: ResetPasswordPayload, { rejectWithValue }) => {
+        try {
+            const response = await authService.resetPassword(payload);
+            return response;
+        } catch (err: any) {
+            return rejectWithValue(err.response?.data?.message || err.message || "Password reset failed");
+        }
+    }
+);
+
 const authSlice = createSlice({
     name: "auth",
     initialState,
@@ -140,6 +183,50 @@ const authSlice = createSlice({
             state.user = null;
             state.isAuthenticated = false;
             state.error = null;
+        });
+
+        // Google Login
+        builder.addCase(googleLoginUser.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(googleLoginUser.fulfilled, (state, action) => {
+            state.loading = false;
+            state.user = action.payload;
+            state.isAuthenticated = true;
+            state.error = null;
+        });
+        builder.addCase(googleLoginUser.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.payload as string;
+        });
+
+        // Forgot Password
+        builder.addCase(forgotPassword.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(forgotPassword.fulfilled, (state) => {
+            state.loading = false;
+            state.error = null;
+        });
+        builder.addCase(forgotPassword.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.payload as string;
+        });
+
+        // Reset Password
+        builder.addCase(resetPassword.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(resetPassword.fulfilled, (state) => {
+            state.loading = false;
+            state.error = null;
+        });
+        builder.addCase(resetPassword.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.payload as string;
         });
     },
 });

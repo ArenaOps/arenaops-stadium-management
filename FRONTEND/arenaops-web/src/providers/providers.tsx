@@ -1,5 +1,7 @@
 "use client";
 
+import { Toaster } from "react-hot-toast";
+
 import { Provider } from "react-redux";
 import { store } from "@/app/store/store";
 import { useEffect } from "react";

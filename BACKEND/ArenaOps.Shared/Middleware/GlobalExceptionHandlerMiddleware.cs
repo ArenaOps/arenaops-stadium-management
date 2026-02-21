@@ -1,8 +1,10 @@
 using System.Text.Json;
-using ArenaOps.AuthService.Core.Exceptions;
-using ArenaOps.AuthService.Core.Models;
+using ArenaOps.Shared.Exceptions;
+using ArenaOps.Shared.Models;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
-namespace ArenaOps.AuthService.API.Middleware;
+namespace ArenaOps.Shared.Middleware;
 
 /// <summary>
 /// Global exception handler middleware.

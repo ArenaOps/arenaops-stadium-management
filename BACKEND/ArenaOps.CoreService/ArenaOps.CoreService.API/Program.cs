@@ -1,6 +1,10 @@
 using Serilog;
 using Microsoft.EntityFrameworkCore;
 using ArenaOps.CoreService.Infrastructure.Data;
+using ArenaOps.Shared.Middleware;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,9 +18,6 @@ builder.Host.UseSerilog();
 // 2. Database Connection (Hosted DB)
 var connectionString = builder.Configuration.GetConnectionString("CoreDb");
 
-// TODO: Re-add Redis when hosted Redis provider is configured
-// var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
-
 // 3. Register Services
 builder.Services.AddSingleton<ArenaOps.CoreService.Application.Interfaces.IDapperContext, ArenaOps.CoreService.Infrastructure.Data.DapperContext>();
 
@@ -24,61 +25,46 @@ builder.Services.AddSingleton<ArenaOps.CoreService.Application.Interfaces.IDappe
 builder.Services.AddDbContext<CoreDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// 4. Configure JWT Authentication
-var jwtSettings = builder.Configuration.GetSection("Jwt");
-var jwksUrl = jwtSettings.GetValue<string>("JwksUrl")!;
-
-// Pre-fetch the RSA key from AuthService JWKS
-// Note: In production, you'd want to handle key rotation and cache the key
-var client = new HttpClient();
-var jwksJson = client.GetStringAsync(jwksUrl).GetAwaiter().GetResult();
-var jwks = new Microsoft.IdentityModel.Tokens.JsonWebKeySet(jwksJson);
-var signingKey = jwks.Keys[0]; // Take the first key (RS256)
-
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+// 3b. Configure Authentication (Using local RSA public key)
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        ValidateIssuer = true,
-        ValidIssuer = jwtSettings.GetValue<string>("Issuer"),
-        ValidateAudience = true,
-        ValidAudience = jwtSettings.GetValue<string>("Audience"),
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = signingKey,
-        ClockSkew = TimeSpan.FromMinutes(1)
-    };
+        var rsa = RSA.Create();
+        var keyPath = Path.Combine(builder.Environment.ContentRootPath, "Keys", "rsa-public.key");
 
-    options.RequireHttpsMetadata = false;
-    
-    // Cookie support (optional, matching AuthService pattern)
-    options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
-    {
-        OnMessageReceived = context =>
+        if (File.Exists(keyPath))
         {
-            if (string.IsNullOrEmpty(context.Token) &&
-                context.Request.Cookies.TryGetValue("accessToken", out var cookieToken))
-            {
-                context.Token = cookieToken;
-            }
-            return Task.CompletedTask;
+            var keyPem = File.ReadAllText(keyPath);
+            rsa.ImportFromPem(keyPem);
         }
-    };
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = "ArenaOps",
+            ValidateAudience = true,
+            ValidAudience = "ArenaOps",
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new RsaSecurityKey(rsa),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+// 3c. Authorization
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("StadiumOwner", policy => policy.RequireRole("StadiumOwner"));
 });
 
-builder.Services.AddAuthorization();
+// 3d. Controllers
 builder.Services.AddControllers();
 
-// 5. Add Health Checks
+// 4. Add Health Checks
 builder.Services.AddHealthChecks()
     .AddSqlServer(connectionString!, name: "SQL Server");
 
-// 6. CORS
+// 5. CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -92,7 +78,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// 7. Configure the HTTP request pipeline.
+// 6. Configure the HTTP request pipeline.
 app.UseSerilogRequestLogging();
 app.UseCors("AllowFrontend");
 
@@ -102,13 +88,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 
-
-// 6. Map Health Check endpoint
+// 7. Map Endpoints
 app.MapHealthChecks("/health");
-
 app.MapGet("/", () => "ArenaOps CoreService API is running.");
 app.MapControllers();
 

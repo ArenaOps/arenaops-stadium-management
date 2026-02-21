@@ -37,6 +37,9 @@ public class CoreDbContext : DbContext
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
 
+            entity.HasIndex(e => e.OwnerId);
+            entity.HasIndex(e => e.City);
+
             entity.HasMany(e => e.SeatingPlans)
                   .WithOne(sp => sp.Stadium)
                   .HasForeignKey(sp => sp.StadiumId)
@@ -54,6 +57,7 @@ public class CoreDbContext : DbContext
 
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            entity.HasIndex(e => e.StadiumId);
 
             entity.HasMany(e => e.Sections)
                   .WithOne(s => s.SeatingPlan)
@@ -76,6 +80,7 @@ public class CoreDbContext : DbContext
             entity.Property(e => e.Type).HasMaxLength(20).IsRequired();
             entity.Property(e => e.SeatType).HasMaxLength(50);
             entity.Property(e => e.Color).HasMaxLength(20);
+            entity.HasIndex(e => e.SeatingPlanId);
 
             entity.HasMany(e => e.Seats)
                   .WithOne(s => s.Section)
@@ -94,6 +99,8 @@ public class CoreDbContext : DbContext
 
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.IsAccessible).HasDefaultValue(false);
+            entity.HasIndex(e => e.SectionId);
+            entity.HasIndex(e => e.RowLabel);
         });
 
         // ─── Landmark ──────────────────────────────────────────────
@@ -104,6 +111,7 @@ public class CoreDbContext : DbContext
 
             entity.Property(e => e.Type).HasMaxLength(50).IsRequired();
             entity.Property(e => e.Label).HasMaxLength(100);
+            entity.HasIndex(e => e.SeatingPlanId);
         });
     }
 }
