@@ -91,9 +91,15 @@ await cache.RemoveByPrefixAsync(CacheKeys.StadiumPrefix); // removes all stadium
 ## Prerequisites
 
 ```powershell
-# Redis via Docker
-docker run -d --name myredis -p 6379:6379 redis
-docker exec myredis redis-cli ping    # → PONG
+# Start Redis (from project root)
+docker-compose up -d
+
+# Verify
+docker-compose ps                              # should show arenaops-redis as running
+docker exec arenaops-redis redis-cli ping      # → PONG
+
+# Stop when done
+docker-compose down
 ```
 
 ---
