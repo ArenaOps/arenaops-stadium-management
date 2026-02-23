@@ -1,10 +1,14 @@
 using Serilog;
 using Microsoft.EntityFrameworkCore;
-using ArenaOps.CoreService.Infrastructure.Data;
-using ArenaOps.Shared.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Security.Cryptography;
+using ArenaOps.CoreService.Infrastructure.Data;
+using ArenaOps.CoreService.Application.Interfaces;
+using ArenaOps.CoreService.Infrastructure.Repositories;
+using ArenaOps.CoreService.Infrastructure.Services;
+using ArenaOps.Shared.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,15 +23,17 @@ builder.Host.UseSerilog();
 var connectionString = builder.Configuration.GetConnectionString("CoreDb");
 
 // 3. Register Services
-builder.Services.AddSingleton<ArenaOps.CoreService.Application.Interfaces.IDapperContext, ArenaOps.CoreService.Infrastructure.Data.DapperContext>();
+builder.Services.AddSingleton<IDapperContext, DapperContext>();
 
 // Repositories
-builder.Services.AddScoped<ArenaOps.CoreService.Application.Interfaces.ISeatingPlanRepository, ArenaOps.CoreService.Infrastructure.Repositories.SeatingPlanRepository>();
-builder.Services.AddScoped<ArenaOps.CoreService.Application.Interfaces.IStadiumRepository, ArenaOps.CoreService.Infrastructure.Repositories.StadiumRepository>();
+builder.Services.AddScoped<IStadiumRepository, StadiumRepository>();
+builder.Services.AddScoped<ISeatingPlanRepository, SeatingPlanRepository>();
+builder.Services.AddScoped<ISectionRepository, SectionRepository>();
 
 // Services
-builder.Services.AddScoped<ArenaOps.CoreService.Application.Interfaces.ISeatingPlanService, ArenaOps.CoreService.Infrastructure.Services.SeatingPlanService>();
-builder.Services.AddScoped<ArenaOps.CoreService.Application.Interfaces.IStadiumService, ArenaOps.CoreService.Infrastructure.Services.StadiumService>();
+builder.Services.AddScoped<IStadiumService, StadiumService>();
+builder.Services.AddScoped<ISeatingPlanService, SeatingPlanService>();
+builder.Services.AddScoped<ISectionService, SectionService>();
 
 // 3a. Register EF Core DbContext
 builder.Services.AddDbContext<CoreDbContext>(options =>
@@ -59,10 +65,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// 3c. Authorization
+// 3c. Authorization Policies
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("StadiumOwner", policy => policy.RequireRole("StadiumOwner"));
+    options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("Organizer", policy => policy.RequireRole("Organizer"));
 });
 
 // 3d. Controllers
@@ -72,31 +80,36 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    options.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "ArenaOps Core Service",
         Version = "v1",
-        Description = "Core domain logic and management microservice for ArenaOps."
+        Description = "Core domain logic and management microservice for the ArenaOps platform.\n\n" +
+                      "**Modules:** Stadium, Seating Plans, Sections, Seats, Events, Booking.\n" +
+                      "**Authentication:** Use the Authorize button (🔒) to add your JWT token.\n" +
+                      "**Format:** `Bearer <your-token>`"
     });
 
-    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    // Add JWT Bearer security definition
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        In = ParameterLocation.Header,
         Description = "Enter your JWT token.\n\nExample: `eyJhbGciOiJSUzI1NiIs...`"
     });
 
-    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    // Apply Bearer token globally — endpoints with [Authorize] will show 🔒
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            new OpenApiSecurityScheme
             {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                Reference = new OpenApiReference
                 {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
                 }
             },
