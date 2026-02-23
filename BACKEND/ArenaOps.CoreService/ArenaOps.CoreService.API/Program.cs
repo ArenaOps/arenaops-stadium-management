@@ -4,8 +4,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Security.Cryptography;
+using StackExchange.Redis;
 using ArenaOps.CoreService.Infrastructure.Data;
 using ArenaOps.CoreService.Application.Interfaces;
+using ArenaOps.CoreService.Application.Models;
 using ArenaOps.CoreService.Infrastructure.Repositories;
 using ArenaOps.CoreService.Infrastructure.Services;
 using ArenaOps.Shared.Middleware;
@@ -24,6 +26,7 @@ var connectionString = builder.Configuration.GetConnectionString("CoreDb");
 
 // 3. Register Services
 builder.Services.AddSingleton<IDapperContext, DapperContext>();
+builder.Services.AddScoped<IDapperQueryService, DapperQueryService>();
 
 // Repositories
 builder.Services.AddScoped<IStadiumRepository, StadiumRepository>();
@@ -34,6 +37,22 @@ builder.Services.AddScoped<ISectionRepository, SectionRepository>();
 builder.Services.AddScoped<IStadiumService, StadiumService>();
 builder.Services.AddScoped<ISeatingPlanService, SeatingPlanService>();
 builder.Services.AddScoped<ISectionService, SectionService>();
+
+// 3a-redis. Redis Cache
+var redisConnectionString = builder.Configuration.GetValue<string>("Redis:ConnectionString") ?? "localhost:6379";
+var redisInstanceName = builder.Configuration.GetValue<string>("Redis:InstanceName") ?? "ArenaOps_";
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = redisConnectionString;
+    options.InstanceName = redisInstanceName;
+});
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+    ConnectionMultiplexer.Connect(redisConnectionString));
+
+builder.Services.Configure<CacheSettings>(builder.Configuration.GetSection("CacheSettings"));
+builder.Services.AddScoped<ICacheService, RedisCacheService>();
 
 // 3a. Register EF Core DbContext
 builder.Services.AddDbContext<CoreDbContext>(options =>
@@ -120,7 +139,8 @@ builder.Services.AddSwaggerGen(options =>
 
 // 4. Add Health Checks
 builder.Services.AddHealthChecks()
-    .AddSqlServer(connectionString!, name: "SQL Server");
+    .AddSqlServer(connectionString!, name: "SQL Server")
+    .AddRedis(redisConnectionString, name: "Redis");
 
 // 5. CORS
 builder.Services.AddCors(options =>
