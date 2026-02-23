@@ -5,6 +5,7 @@ import { Calendar, MapPin, Users, ArrowRight } from "lucide-react"
 import styles from "./EventDiscovery.module.scss"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import { Event } from "@/types/event"
 
 // Mock Data for Placeholder
 const mockEvents = [
@@ -39,8 +40,10 @@ const mockEvents = [
         color: "linear-gradient(135deg, #7c2d12 0%, #f97316 100%)"
     }
 ]
-
-export function EventDiscovery() {
+interface EventDiscoveryProps {
+  events: Event[]
+}
+export function EventDiscovery({events}:EventDiscoveryProps) {
 
     return (
         <section className={styles.eventDiscoverySection}>

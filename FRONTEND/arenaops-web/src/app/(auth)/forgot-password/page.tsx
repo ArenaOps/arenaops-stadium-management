@@ -85,7 +85,7 @@ export default function ForgotPasswordPage() {
                             </div>
                             <h3 className="text-xl font-bold mb-2">Check your email</h3>
                             <p className="text-gray-400 text-sm mb-8">
-                                We've sent a 6-digit code to <span className="text-white">{email}</span>.
+                                We{"'"}ve sent a 6-digit code to <span className="text-white">{email}</span>.
                             </p>
 
                             <Link

@@ -1,63 +1,167 @@
-"use client";
-
-import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { CalendarDays, Clock, MapPin, Users } from "lucide-react";
+import type { Metadata } from "next";
+import Image from "next/image";
 
-export default function EventDetailPage() {
-  const params = useParams();
-  const eventId = params.eventId as string;
+type Props = {
+  params: {
+    eventId: string;
+  };
+};
 
-  const router = useRouter()
-  const handleTicket =()=>{
-    router.push("/stadiums")
-  }
+export async function generateMetadata(
+  { params }: Props
+): Promise<Metadata> {
+  return {
+    title: `Event ${params.eventId} | ArenaOps`,
+    description: `Details for event ${params.eventId}`,
+  };
+}
+
+
+export default function EventDetailPage({ params }: Props) {
+  const eventId = params.eventId;
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      {/* Event Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-          Summer Concert 2026
-        </h1>
-        <p className="text-lg text-gray-600 dark:text-gray-400">
-          Event ID: {eventId}
-        </p>
-      </div>
+    <div className="min-h-screen bg-linear-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900">
+      
+      {/* HERO SECTION */}
+      <div className="relative h-[320px] w-full overflow-hidden">
+        <Image
+    src="https://images.unsplash.com/photo-1506157786151-b8491531f063"
+    alt="Event Banner"
+    fill
+    priority
+    className="object-cover brightness-75"
+  />
+        <div className="absolute inset-0 bg-black/40" />
 
-      {/* Event Details */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
-        <h2 className="text-2xl font-semibold mb-4">Event Details</h2>
-        <div className="space-y-2 text-gray-700 dark:text-gray-300">
-          <p><strong>Date:</strong> July 15, 2026</p>
-          <p><strong>Time:</strong> 7:00 PM</p>
-          <p><strong>Venue:</strong> Concert Arena</p>
-          <p><strong>Capacity:</strong> 5,000 seats</p>
+        <div className="relative container mx-auto px-6 py-16 text-white">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            Summer Concert 2026
+          </h1>
+          <p className="text-lg text-gray-200">
+            Event ID: {eventId}
+          </p>
         </div>
       </div>
 
-      {/* Book Tickets Button */}
-      <div className="flex gap-4">
-        <Link
-          href={`/events/${eventId}/book`}
-          onClick={handleTicket}
-          className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Book Tickets
-        </Link>
+      {/* CONTENT */}
+      <div className="container mx-auto px-6 py-12 grid md:grid-cols-3 gap-8">
         
-        <Link
-          href="/"
-          className="inline-flex items-center px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-        >
-          Back to Home
-        </Link>
+       {/* LEFT - EVENT DETAILS */}
+<div className="md:col-span-2 space-y-8">
+
+  {/* EVENT DETAILS CARD */}
+  <div className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm p-8">
+    <h2 className="text-2xl font-bold mb-8 tracking-tight">
+      Event Details
+    </h2>
+
+    <div className="grid sm:grid-cols-2 gap-6">
+
+      <div className="flex items-start gap-4 p-4 rounded-xl hover:bg-muted transition-colors">
+        <div className="p-3 rounded-lg bg-primary/10 text-primary">
+          <CalendarDays className="w-5 h-5" />
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Date</p>
+          <p className="font-semibold">July 15, 2026</p>
+        </div>
       </div>
 
-      {/* Info */}
-      <div className="mt-8 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-        <p className="text-sm text-blue-800 dark:text-blue-200">
-          <strong>Note:</strong> This is a placeholder event detail page for Stage 1 testing. Replace with your actual event detail implementation.
-        </p>
+      <div className="flex items-start gap-4 p-4 rounded-xl hover:bg-muted transition-colors">
+        <div className="p-3 rounded-lg bg-primary/10 text-primary">
+          <Clock className="w-5 h-5" />
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Time</p>
+          <p className="font-semibold">7:00 PM</p>
+        </div>
+      </div>
+
+      <div className="flex items-start gap-4 p-4 rounded-xl hover:bg-muted transition-colors">
+        <div className="p-3 rounded-lg bg-primary/10 text-primary">
+          <MapPin className="w-5 h-5" />
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Venue</p>
+          <p className="font-semibold">Concert Arena</p>
+        </div>
+      </div>
+
+      <div className="flex items-start gap-4 p-4 rounded-xl hover:bg-muted transition-colors">
+        <div className="p-3 rounded-lg bg-primary/10 text-primary">
+          <Users className="w-5 h-5" />
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Capacity</p>
+          <p className="font-semibold">5,000 Seats</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  {/* DESCRIPTION */}
+  <div className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm p-8">
+    <h2 className="text-2xl font-bold mb-4 tracking-tight">
+      About This Event
+    </h2>
+
+    <p className="text-muted-foreground leading-relaxed">
+      Experience an unforgettable night of music, lights, and energy at
+      Summer Concert 2026. Featuring top artists and an electrifying
+      atmosphere, this event promises a world-class entertainment
+      experience.
+    </p>
+  </div>
+
+</div>
+
+        {/* RIGHT - BOOKING CARD */}
+        <div className="sticky top-24 h-fit">
+  <div className="bg-card text-card-foreground rounded-var(--radius-lg) shadow-2xl p-8 border border-border space-y-6 relative overflow-hidden">
+
+    {/* Subtle Glow Accent */}
+    <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+
+    {/* Price Section */}
+    <div className="space-y-2">
+      <p className="text-sm text-muted-foreground uppercase tracking-wide">
+        Starting From
+      </p>
+      <div className="flex items-baseline gap-2">
+        <h3 className="text-4xl font-extrabold text-primary">
+          ₹999
+        </h3>
+        <span className="text-muted-foreground text-sm">per ticket</span>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Limited seats available
+      </p>
+    </div>
+
+    {/* CTA Button */}
+    <Link
+      href={`/events/${eventId}/book`}
+      className="block w-full text-center py-3 bg-primary text-primary-foreground font-semibold rounded-[var(--radius-md)] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+    >
+      Book Tickets
+    </Link>
+
+    {/* Secondary Button */}
+    <Link
+      href="/"
+      className="block w-full text-center py-3 bg-secondary text-secondary-foreground font-medium rounded-[var(--radius-md)] hover:bg-secondary/80 transition-colors"
+    >
+      Back to Home
+    </Link>
+
+  </div>
+</div>
+
       </div>
     </div>
   );
