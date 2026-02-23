@@ -5,6 +5,8 @@ using ArenaOps.Shared.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
+using StackExchange.Redis;
+using ArenaOps.CoreService.Application.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +22,7 @@ var connectionString = builder.Configuration.GetConnectionString("CoreDb");
 
 // 3. Register Services
 builder.Services.AddSingleton<ArenaOps.CoreService.Application.Interfaces.IDapperContext, ArenaOps.CoreService.Infrastructure.Data.DapperContext>();
+builder.Services.AddScoped<ArenaOps.CoreService.Application.Interfaces.IDapperQueryService, ArenaOps.CoreService.Infrastructure.Data.DapperQueryService>();
 
 // Repositories
 builder.Services.AddScoped<ArenaOps.CoreService.Application.Interfaces.ISeatingPlanRepository, ArenaOps.CoreService.Infrastructure.Repositories.SeatingPlanRepository>();
@@ -28,6 +31,22 @@ builder.Services.AddScoped<ArenaOps.CoreService.Application.Interfaces.IStadiumR
 // Services
 builder.Services.AddScoped<ArenaOps.CoreService.Application.Interfaces.ISeatingPlanService, ArenaOps.CoreService.Infrastructure.Services.SeatingPlanService>();
 builder.Services.AddScoped<ArenaOps.CoreService.Application.Interfaces.IStadiumService, ArenaOps.CoreService.Infrastructure.Services.StadiumService>();
+
+// 3a-redis. Redis Cache
+var redisConnectionString = builder.Configuration.GetValue<string>("Redis:ConnectionString") ?? "localhost:6379";
+var redisInstanceName = builder.Configuration.GetValue<string>("Redis:InstanceName") ?? "ArenaOps_";
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = redisConnectionString;
+    options.InstanceName = redisInstanceName;
+});
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+    ConnectionMultiplexer.Connect(redisConnectionString));
+
+builder.Services.Configure<CacheSettings>(builder.Configuration.GetSection("CacheSettings"));
+builder.Services.AddScoped<ArenaOps.CoreService.Application.Interfaces.ICacheService, ArenaOps.CoreService.Infrastructure.Services.RedisCacheService>();
 
 // 3a. Register EF Core DbContext
 builder.Services.AddDbContext<CoreDbContext>(options =>
@@ -107,7 +126,8 @@ builder.Services.AddSwaggerGen(options =>
 
 // 4. Add Health Checks
 builder.Services.AddHealthChecks()
-    .AddSqlServer(connectionString!, name: "SQL Server");
+    .AddSqlServer(connectionString!, name: "SQL Server")
+    .AddRedis(redisConnectionString, name: "Redis");
 
 // 5. CORS
 builder.Services.AddCors(options =>
