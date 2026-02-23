@@ -11,11 +11,11 @@ import Link from "next/link";
 type Theme = "morning" | "evening" | "night";
 
 export function HeroSection() {
-  
   const getCurrentTheme = (): Theme => {
     const hour = new Date().getHours();
+
     if (hour >= 6 && hour < 16) return "morning";
-    if (hour >= 17 && hour < 19) return "evening";
+    if (hour >= 16 && hour < 19) return "evening";
     return "night";
   };
 
@@ -26,25 +26,25 @@ export function HeroSection() {
     evening: "/stadium-evening.jpg",
     night: "/stadium-night.jpg",
   };
-const [time, setTime] = useState<string>("");
+  const [time, setTime] = useState<string>("");
 
-useEffect(() => {
-  const updateTime = () => {
-    const now = new Date();
-    setTime(
-      now.toLocaleTimeString("en-IN", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      })
-    );
-  };
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setTime(
+        now.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }),
+      );
+    };
 
-  updateTime();
-  const interval = setInterval(updateTime, 1000);
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
 
-  return () => clearInterval(interval);
-}, []);
+    return () => clearInterval(interval);
+  }, []);
   return (
     <section className={styles.heroContainer} data-theme={theme}>
       <Image
@@ -54,11 +54,29 @@ useEffect(() => {
         className="object-cover"
       />
       <div className={styles.centerSpotlight} />
-      <div className="fixed right-0 -translate-y-1/2 z-50 flex items-center -rotate-90">
-  <div className="bg-black/50 backdrop-blur-md text-white px-6 py-3 rounded-full text-xl font-semibold shadow-lg">
-    {time}
-  </div>
-</div>
+      <div className="fixed top-20 right-6 z-50 -rotate-90 origin-right">
+        <div
+          className="
+    px-10 py-4
+    bg-black
+    rounded-xl 
+    border-4 border-[#10b981]
+    shadow-[0_0_40px_rgba(59,130,246,0.7)]
+  "
+        >
+          <span
+            className="
+      text-[#10b981]
+      text-2xl
+      font-mono
+      tracking-widest
+      drop-shadow-[0_0_8px_rgba(59,130,246,0.9)]
+    "
+          >
+            {time}
+          </span>
+        </div>
+      </div>
 
       {/* Content Layer */}
       <div className={styles.contentLayer}>
@@ -96,10 +114,10 @@ useEffect(() => {
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-6 justify-center items-center w-full sm:w-auto mb-16 animate-fade-in-up delay-200 z-50">
           <Link href={"/events"}>
-          <Button
-  variant="outline"
-  size="lg"
-  className="
+            <Button
+              variant="outline"
+              size="lg"
+              className="
   h-14 px-10 text-lg font-medium
   border
   border-(--btn-outline)
@@ -109,10 +127,10 @@ useEffect(() => {
   transition-all duration-300
   rounded-full group cursor-pointer
   "
->
-            Explore Events
-            <PlayCircle className="ml-2 h-5 w-5 transition-colors group-hover:text-current" />
-          </Button>
+            >
+              Explore Events
+              <PlayCircle className="ml-2 h-5 w-5 transition-colors group-hover:text-current" />
+            </Button>
           </Link>
         </div>
       </div>
