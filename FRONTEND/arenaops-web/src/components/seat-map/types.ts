@@ -1,149 +1,163 @@
 /**
- * Seat Map Types
- * Defines TypeScript interfaces for stadium section rendering
+ * Stadium Seat Map Domain Types
+ * Aligned with backend schema
+ * Supports overview + seat drill-down flow
  */
 
-/**
- * Represents a point in 2D space
- */
-export type Point = {
-    x: number;
-    y: number;
-};
+/* ============================================================
+   1️⃣ Core Domain Entities (Backend Template Layer)
+   ============================================================ */
 
 /**
- * Represents the color and status information for a section
+ * Stadium entity (metadata only)
  */
-export type SectionColor = {
-    name: string;
-    fill: string;
-    stroke?: string;
-    opacity?: number;
-    hoverFill?: string;
-};
+export interface Stadium {
+  stadiumId: string;
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  pincode: string;
+  latitude: number;
+  longitude: number;
+  isApproved: boolean;
+  isActive: boolean;
+  createdAt: string;
+}
 
 /**
- * Represents a rectangular section of the stadium
+ * Seating Plan (Base Layout Template)
  */
-export type RectSection = {
-    type: "rect";
-    id: string;
-    label: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    colorKey: string;
-    rotation?: number;
-};
+export interface SeatingPlan {
+  seatingPlanId: string;
+  stadiumId: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+}
 
 /**
- * Represents a polygon section (arbitrary shape)
+ * Section (Template Layer)
+ * Used in overview rendering
  */
-export type PolygonSection = {
-    type: "polygon";
-    id: string;
-    label: string;
-    points: Point[];
-    colorKey: string;
-};
+export interface SectionTemplate {
+  sectionId: string;
+  seatingPlanId: string;
+  name: string;
+
+  /** 'Seated' or 'Standing' */
+  type: "Seated" | "Standing";
+
+  /** Max capacity (used for Standing sections) */
+  capacity?: number;
+
+  /** VIP / Premium / Standard */
+  seatType: string;
+
+  /** Display color (hex or token) */
+  color: string;
+
+  /** Position in SVG space */
+  posX: number;
+  posY: number;
+
+  /** Optional dimensions for overview rectangle */
+  width?: number;
+  height?: number;
+
+  /** Section visibility */
+  isActive?: boolean;
+}
 
 /**
- * Represents a circular section
+ * Seat (Template Layer — only for Seated sections)
  */
-export type CircleSection = {
-    type: "circle";
-    id: string;
-    label: string;
-    cx: number;
-    cy: number;
-    r: number;
-    colorKey: string;
-};
+export interface SeatTemplate {
+  seatId: string;
+  sectionId: string;
+
+  rowLabel: string;
+  seatNumber: number;
+  seatLabel: string;
+
+  posX: number;
+  posY: number;
+
+  isActive: boolean;
+  isAccessible: boolean;
+}
 
 /**
- * Union type for any section shape
+ * Landmark (Stage, Gate, Exit, etc.)
  */
-export type Section = RectSection | PolygonSection | CircleSection;
+export interface LandmarkTemplate {
+  featureId: string;
+  seatingPlanId: string;
+
+  type: "STAGE" | "GATE" | "EXIT" | "RESTROOM" | string;
+
+  label: string;
+
+  posX: number;
+  posY: number;
+  width: number;
+  height: number;
+}
+
 
 /**
- * Complete seat map configuration
+ * Full layout data returned from backend
  */
-export type SeatMapConfig = {
-    /** Unique identifier for this seat map */
-    id: string;
-    
-    /** Human-readable name */
-    name: string;
-    
-    /** SVG viewBox dimensions */
-    viewBox: {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    };
-    
-    /** Stadium sections to render */
-    sections: Section[];
-    
-    /** Color palette for sections */
-    colors: Record<string, SectionColor>;
-    
-    /** Optional metadata */
-    metadata?: {
-        capacity?: number;
-        region?: string;
-        lastUpdated?: string;
-    };
-};
+export interface SeatingPlanLayout {
+  stadium: Stadium;
+  seatingPlan: SeatingPlan;
+  sections: SectionTemplate[];
+  seats: SeatTemplate[];
+  landmarks: LandmarkTemplate[];
+}
+
 
 /**
- * Props for SeatMapRenderer component
+ * Seat booking status
  */
-export type SeatMapRendererProps = {
-    /** Seat map configuration */
-    config: SeatMapConfig;
-    
-    /** Width of SVG container (CSS) */
-    width?: string | number;
-    
-    /** Height of SVG container (CSS) */
-    height?: string | number;
-    
-    /** CSS class for styling */
-    className?: string;
-    
-    /** Callback when section is clicked (for future interaction) */
-    onSectionClick?: (section: Section) => void;
-    
-    /** Callback when section is hovered (for future interaction) */
-    onSectionHover?: (section: Section | null) => void;
-    
-    /** Show section labels */
-    showLabels?: boolean;
-    
-    /** Default color key if section's color is not found */
-    defaultColorKey?: string;
-    
-    /** SVG styling options */
-    svgProps?: React.SVGAttributes<SVGSVGElement>;
-};
+export type SeatStatus =
+  | "available"
+  | "booked"
+  | "blocked"
+  | "selected";
 
 /**
- * Represents the state of a section
+ * Runtime seat state
  */
-export type SectionState = {
-    id: string;
-    status: "available" | "booked" | "blocked" | "selected";
-    occupancy?: number;
-    capacity?: number;
-};
+export interface SeatState {
+  seatId: string;
+  status: SeatStatus;
+}
 
 /**
- * Seat map state including all sections and their current status
+ * Section-level derived state (optional helper)
  */
-export type SeatMapState = {
-    config: SeatMapConfig;
-    sectionStates: Record<string, SectionState>;
-};
+export interface SectionDerivedState {
+  sectionId: string;
+  totalSeats: number;
+  bookedSeats: number;
+  availableSeats: number;
+}
+
+
+export interface SeatMapOverviewProps {
+  sections: SectionTemplate[];
+  landmarks?: LandmarkTemplate[];
+
+  onSectionClick?: (section: SectionTemplate) => void;
+}
+
+export interface SeatGridRendererProps {
+  section: SectionTemplate;
+  seats: SeatTemplate[];
+  seatStates: Record<string, SeatState>;
+
+  onSeatClick?: (seat: SeatTemplate) => void;
+}
