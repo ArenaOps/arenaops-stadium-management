@@ -54,6 +54,10 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 builder.Services.Configure<CacheSettings>(builder.Configuration.GetSection("CacheSettings"));
 builder.Services.AddScoped<ICacheService, RedisCacheService>();
 
+// Rate Limiting — Redis-backed, config-driven
+builder.Services.Configure<ArenaOps.Shared.Models.RateLimitSettings>(
+    builder.Configuration.GetSection("RateLimiting"));
+
 // 3a. Register EF Core DbContext
 builder.Services.AddDbContext<CoreDbContext>(options =>
     options.UseSqlServer(connectionString));
@@ -159,6 +163,9 @@ var app = builder.Build();
 // 6. Configure the HTTP request pipeline.
 app.UseSerilogRequestLogging();
 app.UseCors("AllowFrontend");
+
+// Rate limiting — Redis-backed, before Auth
+app.UseMiddleware<ArenaOps.Shared.Middleware.RedisRateLimitMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

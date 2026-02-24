@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text.Json;
-using System.Threading.RateLimiting;
 using ArenaOps.AuthService.Core.Interfaces;
 using ArenaOps.Shared.Models;
 using ArenaOps.AuthService.Core.Models;
@@ -8,7 +7,7 @@ using ArenaOps.AuthService.Infrastructure.Data;
 using ArenaOps.AuthService.Infrastructure.Services;
 using ArenaOps.Shared.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.RateLimiting;
+using StackExchange.Redis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -30,41 +29,14 @@ try
     // Add services to the container.
     builder.Services.AddControllers();
 
-// Rate Limiting — prevent brute-force attacks on auth endpoints
-builder.Services.AddRateLimiter(options =>
-{
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    options.OnRejected = async (context, cancellationToken) =>
-    {
-        context.HttpContext.Response.ContentType = "application/json";
-        var response = ApiResponse<object>.Fail("RATE_LIMITED", "Too many requests. Please try again later.");
-        await context.HttpContext.Response.WriteAsync(
-            JsonSerializer.Serialize(response, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }),
-            cancellationToken);
-    };
+// Redis — for rate limiting (shared with docker-compose)
+var redisConnectionString = builder.Configuration.GetValue<string>("Redis:ConnectionString") ?? "localhost:6379";
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+    ConnectionMultiplexer.Connect(redisConnectionString));
 
-    // Strict: 5 requests per minute per IP (login, forgot-password, reset-password)
-    options.AddPolicy("auth-strict", context =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            factory: _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = 5,
-                Window = TimeSpan.FromMinutes(1),
-                QueueLimit = 0
-            }));
-
-    // General: 20 requests per minute per IP (register, google, refresh)
-    options.AddPolicy("auth-general", context =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            factory: _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = 20,
-                Window = TimeSpan.FromMinutes(1),
-                QueueLimit = 0
-            }));
-});
+// Rate Limiting — Redis-backed, config-driven
+builder.Services.Configure<ArenaOps.Shared.Models.RateLimitSettings>(
+    builder.Configuration.GetSection("RateLimiting"));
 
 // CORS — allow frontend to call the API
 builder.Services.AddCors(options =>
@@ -228,8 +200,8 @@ if (!app.Environment.IsDevelopment())
 // CORS — must be before Auth
 app.UseCors("AllowFrontend");
 
-// Rate limiting — must be before Auth
-app.UseRateLimiter();
+// Rate limiting — Redis-backed, must be before Auth
+app.UseMiddleware<RedisRateLimitMiddleware>();
 
 app.UseAuthentication();
 
