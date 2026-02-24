@@ -10,6 +10,7 @@ public interface IStadiumRepository
     Task<IEnumerable<Stadium>> GetAllAsync();
     Task<Stadium?> GetByIdAsync(Guid id);
     Task<IEnumerable<Stadium>> GetByOwnerAsync(Guid ownerId);
+    Task<IEnumerable<Stadium>> GetPendingApprovalAsync();
     Task AddAsync(Stadium stadium);
     Task UpdateAsync(Stadium stadium);
     Task DeleteAsync(Stadium stadium);
