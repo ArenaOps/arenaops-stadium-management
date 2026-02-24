@@ -37,6 +37,7 @@ builder.Services.AddScoped<ISectionRepository, SectionRepository>();
 builder.Services.AddScoped<IStadiumService, StadiumService>();
 builder.Services.AddScoped<ISeatingPlanService, SeatingPlanService>();
 builder.Services.AddScoped<ISectionService, SectionService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 // 3a-redis. Redis Cache
 var redisConnectionString = builder.Configuration.GetValue<string>("Redis:ConnectionString") ?? "localhost:6379";

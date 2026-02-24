@@ -35,6 +35,14 @@ public class StadiumRepository : IStadiumRepository
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<Stadium>> GetPendingApprovalAsync()
+    {
+        return await _context.Stadiums.AsNoTracking()
+            .Where(s => !s.IsApproved)
+            .OrderByDescending(s => s.CreatedAt)
+            .ToListAsync();
+    }
+
     public async Task AddAsync(Stadium stadium)
     {
         await _context.Stadiums.AddAsync(stadium);
