@@ -1,13 +1,13 @@
 using System.Text.Json;
-using ArenaOps.CoreService.Application.Interfaces;
-using ArenaOps.CoreService.Application.Models;
+using ArenaOps.Shared.Interfaces;
+using ArenaOps.Shared.Models;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
-namespace ArenaOps.CoreService.Infrastructure.Services;
+namespace ArenaOps.Shared.Services;
 
 public class RedisCacheService : ICacheService
 {

@@ -194,7 +194,7 @@ public class AuthController : ControllerBase
         if (!string.IsNullOrEmpty(jti) && !string.IsNullOrEmpty(expClaim))
         {
             var expiresAt = DateTimeOffset.FromUnixTimeSeconds(long.Parse(expClaim)).UtcDateTime;
-            _tokenBlacklist.BlacklistToken(jti, expiresAt);
+            await _tokenBlacklist.BlacklistTokenAsync(jti, expiresAt);
         }
 
         // Delete refresh token from DB

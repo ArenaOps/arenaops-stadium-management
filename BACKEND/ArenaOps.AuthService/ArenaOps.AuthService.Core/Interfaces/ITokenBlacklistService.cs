@@ -10,10 +10,10 @@ public interface ITokenBlacklistService
     /// <summary>
     /// Adds a token's JTI to the blacklist until it expires.
     /// </summary>
-    void BlacklistToken(string jti, DateTime expiresAt);
+    Task BlacklistTokenAsync(string jti, DateTime expiresAt);
 
     /// <summary>
     /// Checks if a token's JTI has been blacklisted.
     /// </summary>
-    bool IsBlacklisted(string jti);
+    Task<bool> IsBlacklistedAsync(string jti);
 }

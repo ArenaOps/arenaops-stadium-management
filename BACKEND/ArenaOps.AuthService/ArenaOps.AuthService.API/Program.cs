@@ -13,6 +13,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using StackExchange.Redis;
+using ArenaOps.Shared.Interfaces;
+using ArenaOps.Shared.Models;
+using ArenaOps.Shared.Services;
 
 try
 {
@@ -101,15 +105,28 @@ builder.Services.AddScoped<IAuthService, ArenaOps.AuthService.Infrastructure.Ser
 // Dapper Context
 builder.Services.AddSingleton<ArenaOps.AuthService.Core.Interfaces.IDapperContext, ArenaOps.AuthService.Infrastructure.Data.DapperContext>();
 
+// Redis Configuration
+var redisConnectionString = builder.Configuration.GetValue<string>("Redis:ConnectionString") ?? "localhost:6379";
+
 // Health Checks
 builder.Services.AddHealthChecks()
-    .AddSqlServer(builder.Configuration.GetConnectionString("AuthDb")!, name: "Auth SQL Server");
+    .AddSqlServer(builder.Configuration.GetConnectionString("AuthDb")!, name: "Auth SQL Server")
+    .AddRedis(redisConnectionString, name: "Redis");
 
 // Email Service (Mock — logs to console)
 builder.Services.AddSingleton<IEmailService, MockEmailService>();
 
-// Token Blacklist (in-memory — for immediate JWT invalidation on logout)
-builder.Services.AddSingleton<ITokenBlacklistService, InMemoryTokenBlacklistService>();
+// 3a-redis. Redis Cache
+builder.Services.AddStackExchangeRedisCache(options => {
+    options.Configuration = redisConnectionString;
+    options.InstanceName = builder.Configuration.GetValue<string>("Redis:InstanceName") ?? "ArenaOps_Auth_";
+});
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConnectionString));
+builder.Services.Configure<CacheSettings>(builder.Configuration.GetSection("CacheSettings"));
+builder.Services.AddScoped<ICacheService, RedisCacheService>();
+
+// Token Blacklist (Redis-based for multi-instance scalability)
+builder.Services.AddScoped<ITokenBlacklistService, RedisTokenBlacklistService>();
 
 // Google OAuth
 builder.Services.Configure<GoogleAuthSettings>(builder.Configuration.GetSection("GoogleAuth"));

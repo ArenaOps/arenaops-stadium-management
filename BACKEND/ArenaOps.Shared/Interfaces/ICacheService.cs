@@ -1,4 +1,4 @@
-namespace ArenaOps.CoreService.Application.Interfaces;
+namespace ArenaOps.Shared.Interfaces;
 
 public interface ICacheService
 {

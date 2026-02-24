@@ -1,4 +1,4 @@
-namespace ArenaOps.CoreService.Application.Models;
+namespace ArenaOps.Shared.Models;
 
 public class CacheSettings
 {

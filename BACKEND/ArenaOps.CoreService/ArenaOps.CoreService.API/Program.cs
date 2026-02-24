@@ -7,9 +7,11 @@ using System.Security.Cryptography;
 using StackExchange.Redis;
 using ArenaOps.CoreService.Infrastructure.Data;
 using ArenaOps.CoreService.Application.Interfaces;
-using ArenaOps.CoreService.Application.Models;
 using ArenaOps.CoreService.Infrastructure.Repositories;
 using ArenaOps.CoreService.Infrastructure.Services;
+using ArenaOps.Shared.Interfaces;
+using ArenaOps.Shared.Models;
+using ArenaOps.Shared.Services;
 using ArenaOps.Shared.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);

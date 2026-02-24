@@ -27,7 +27,7 @@ public class TokenBlacklistMiddleware
         {
             var jti = context.User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
 
-            if (!string.IsNullOrEmpty(jti) && blacklistService.IsBlacklisted(jti))
+            if (!string.IsNullOrEmpty(jti) && await blacklistService.IsBlacklistedAsync(jti))
             {
                 context.Response.StatusCode = 401;
                 context.Response.ContentType = "application/json";
