@@ -2,24 +2,104 @@
 
 import React, { useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { useBooking } from "@/features/bookings/useBooking";
+
 import type {
   SectionTemplate,
   LandmarkTemplate,
-  SeatMapOverviewProps,
+  RectGeometry,
+  ArcGeometry,
 } from "./types";
 
-const DEFAULT_SECTION_WIDTH = 140;
-const DEFAULT_SECTION_HEIGHT = 100;
+interface Props {
+  sections: SectionTemplate[];
+  landmarks?: LandmarkTemplate[];
+  onSectionClick?: (section: SectionTemplate) => void;
+  width?: string | number;
+  height?: string | number;
+  className?: string;
+  viewBox?: string;
+}
 
-export const SeatMapRenderer = React.forwardRef<
-  SVGSVGElement,
-  SeatMapOverviewProps & {
-    width?: string | number;
-    height?: string | number;
-    className?: string;
-    viewBox?: string;
+/* =========================
+   Arc Math Utilities
+========================= */
+
+const polarToCartesian = (
+  cx: number,
+  cy: number,
+  radius: number,
+  angle: number
+) => {
+  const radians = (angle - 90) * (Math.PI / 180);
+  return {
+    x: cx + radius * Math.cos(radians),
+    y: cy + radius * Math.sin(radians),
+  };
+};
+
+const describeArcSection = (
+  cx: number,
+  cy: number,
+  innerRadius: number,
+  outerRadius: number,
+  startAngle: number,
+  endAngle: number
+) => {
+  const startOuter = polarToCartesian(cx, cy, outerRadius, endAngle);
+  const endOuter = polarToCartesian(cx, cy, outerRadius, startAngle);
+
+  const startInner = polarToCartesian(cx, cy, innerRadius, startAngle);
+  const endInner = polarToCartesian(cx, cy, innerRadius, endAngle);
+
+  const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+
+  return `
+    M ${startOuter.x} ${startOuter.y}
+    A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 0 ${endOuter.x} ${endOuter.y}
+    L ${startInner.x} ${startInner.y}
+    A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 1 ${endInner.x} ${endInner.y}
+    Z
+  `;
+};
+
+const generateArcSeats = (
+  centerX: number,
+  centerY: number,
+  innerRadius: number,
+  outerRadius: number,
+  startAngle: number,
+  endAngle: number,
+  rowCount: number,
+  seatsPerRow: number
+) => {
+  const seats = [];
+  const radiusStep = (outerRadius - innerRadius) / rowCount;
+  const angleStep = (endAngle - startAngle) / seatsPerRow;
+
+  for (let row = 0; row < rowCount; row++) {
+    const currentRadius = innerRadius + radiusStep * row + radiusStep / 2;
+
+    for (let seat = 0; seat < seatsPerRow; seat++) {
+      const currentAngle =
+        startAngle + angleStep * seat + angleStep / 2;
+
+      const radians = (currentAngle - 90) * (Math.PI / 180);
+
+      const rawX = centerX + currentRadius * Math.cos(radians);
+const rawY = centerY + currentRadius * Math.sin(radians);
+
+seats.push({
+  x: Number(rawX.toFixed(3)),
+  y: Number(rawY.toFixed(3)),
+});
+    }
   }
->(
+
+  return seats;
+};
+
+export const SeatMapRenderer = React.forwardRef<SVGSVGElement, Props>(
   (
     {
       sections,
@@ -32,10 +112,19 @@ export const SeatMapRenderer = React.forwardRef<
     },
     ref
   ) => {
-    const activeSections = useMemo(
-      () => sections.filter((s) => s.isActive !== false),
-      [sections]
-    );
+    // ✅ Hook MUST be inside component
+    const { state, toggleSeat } = useBooking();
+
+    const activeSections = useMemo(() => {
+      if (!Array.isArray(sections)) {
+        console.error("Sections is not array:", sections);
+        return [];
+      }
+
+      return sections.filter(
+        (s) => s && s.geometry && s.isActive !== false
+      );
+    }, [sections]);
 
     return (
       <svg
@@ -43,55 +132,145 @@ export const SeatMapRenderer = React.forwardRef<
         viewBox={viewBox}
         width={width}
         height={height}
-        className={cn("rounded-lg border bg-gray-50 dark:bg-gray-900", className)}
         preserveAspectRatio="xMidYMid meet"
+        className={cn(
+          "rounded-lg border bg-gray-50 dark:bg-gray-900",
+          className
+        )}
       >
-        {/* Render Sections */}
         {activeSections.map((section) => {
-          const sectionWidth = section.width ?? DEFAULT_SECTION_WIDTH;
-          const sectionHeight = section.height ?? DEFAULT_SECTION_HEIGHT;
+          if (!section || !section.geometry) return null;
 
-          const isStanding = section.type === "Standing";
+          const { geometry } = section;
 
-          return (
-            <g
-              key={section.sectionId}
-              data-section-id={section.sectionId}
-              className="cursor-pointer transition-all duration-200"
-              onClick={() => onSectionClick?.(section)}
-            >
-              <rect
-                x={section.posX}
-                y={section.posY}
-                width={sectionWidth}
-                height={sectionHeight}
-                rx={8}
-                fill={section.color}
-                opacity={0.9}
-                stroke="#1f2937"
-                strokeWidth={1}
-              />
+          // ================= RECT =================
+          if (geometry.geometryType === "Rect") {
+            const g = geometry as RectGeometry;
 
-              {/* Section Label */}
-              <text
-                x={section.posX + sectionWidth / 2}
-                y={section.posY + sectionHeight / 2}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize="14"
-                fontWeight="600"
-                fill="white"
-                pointerEvents="none"
-                className="select-none"
+            return (
+              <g
+                key={section.sectionId}
+                onClick={() => onSectionClick?.(section)}
+                className="cursor-pointer transition-opacity hover:opacity-90"
               >
-                {section.name}
-                {isStanding ? " (Standing)" : ""}
-              </text>
-            </g>
-          );
+                <rect
+                  x={g.posX}
+                  y={g.posY}
+                  width={g.width}
+                  height={g.height}
+                  rx={g.borderRadius ?? 8}
+                  fill={section.color}
+                  stroke="#1f2937"
+                  strokeWidth={1}
+                />
+
+                <text
+                  x={g.posX + g.width / 2}
+                  y={g.posY + g.height / 2}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize="14"
+                  fontWeight="600"
+                  fill="white"
+                  pointerEvents="none"
+                >
+                  {section.name}
+                </text>
+              </g>
+            );
+          }
+
+          // ================= ARC =================
+          if (geometry.geometryType === "Arc") {
+            const g = geometry as ArcGeometry;
+
+            const pathData = describeArcSection(
+              g.centerX,
+              g.centerY,
+              g.innerRadius,
+              g.outerRadius,
+              g.startAngle,
+              g.endAngle
+            );
+
+            const midAngle = (g.startAngle + g.endAngle) / 2;
+            const midRadius =
+              (g.innerRadius + g.outerRadius) / 2;
+
+            const labelPos = polarToCartesian(
+              g.centerX,
+              g.centerY,
+              midRadius,
+              midAngle
+            );
+
+            const seatPositions = generateArcSeats(
+              g.centerX,
+              g.centerY,
+              g.innerRadius,
+              g.outerRadius,
+              g.startAngle,
+              g.endAngle,
+              6,
+              24
+            );
+
+            return (
+              <g
+                key={section.sectionId}
+                onClick={() => onSectionClick?.(section)}
+                className="cursor-pointer transition-opacity hover:opacity-90"
+              >
+                <path
+                  d={pathData}
+                  fill={section.color}
+                  stroke="#1f2937"
+                  strokeWidth={1}
+                />
+
+                {/* Seats */}
+                {seatPositions.map((seat, index) => {
+                  const seatId = `${section.sectionId}-seat-${index}`;
+                  const isSelected =
+                    state.selectedSeats.includes(seatId);
+
+                  return (
+                    <circle
+                      key={seatId}
+                      cx={seat.x}
+                      cy={seat.y}
+                      r={4}
+                      fill={isSelected ? "#10b981" : "white"}
+                      stroke="#111827"
+                      strokeWidth={0.5}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSeat(seatId);
+                      }}
+                    />
+                  );
+                })}
+
+                <text
+                  x={labelPos.x}
+                  y={labelPos.y}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize="13"
+                  fontWeight="600"
+                  fill="white"
+                  pointerEvents="none"
+                >
+                  {section.name}
+                </text>
+              </g>
+            );
+          }
+
+          return null;
         })}
 
-        {/* Render Landmarks */}
+        {/* Landmarks */}
         {landmarks?.map((feature) => (
           <g key={feature.featureId}>
             <rect
@@ -101,7 +280,7 @@ export const SeatMapRenderer = React.forwardRef<
               height={feature.height}
               rx={4}
               fill="#6b7280"
-              opacity={0.6}
+              opacity={0.7}
             />
             <text
               x={feature.posX + feature.width / 2}
@@ -109,7 +288,6 @@ export const SeatMapRenderer = React.forwardRef<
               textAnchor="middle"
               dominantBaseline="middle"
               fontSize="12"
-              fontWeight="500"
               fill="white"
               pointerEvents="none"
             >
