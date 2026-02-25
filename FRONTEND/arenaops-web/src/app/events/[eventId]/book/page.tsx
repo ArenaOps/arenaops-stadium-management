@@ -1,6 +1,4 @@
-"use client";
 
-import { useParams } from "next/navigation";
 import { SeatMapContainer } from "@/components/seat-map/SeatMapContainer";
 import type { SeatingPlanLayout } from "@/components/seat-map/types";
 
@@ -27,57 +25,77 @@ const mockLayout: SeatingPlanLayout = {
     isActive: true,
     createdAt: new Date().toISOString(),
   },
-  sections: [
+sections: [
   {
     sectionId: "north",
     seatingPlanId: "1",
     name: "North Stand",
-    type: "Seated",
+    category: "Seated",
     seatType: "Standard",
     color: "#3b82f6",
-    posX: 250,
-    posY: 50,
-    width: 500,
-    height: 120,
+    geometry: {
+      geometryType: "Arc",
+      centerX: 500,
+      centerY: 400,
+      innerRadius: 250,
+      outerRadius: 350,
+      startAngle: 200,
+      endAngle: 340,
+    },
     isActive: true,
   },
   {
     sectionId: "south",
     seatingPlanId: "1",
     name: "South Stand",
-    type: "Seated",
+    category: "Seated",
     seatType: "Standard",
     color: "#3b82f6",
-    posX: 250,
-    posY: 630,
-    width: 500,
-    height: 120,
+    geometry: {
+      geometryType: "Arc",
+      centerX: 500,
+      centerY: 400,
+      innerRadius: 250,
+      outerRadius: 350,
+      startAngle: 20,
+      endAngle: 160,
+    },
     isActive: true,
   },
   {
     sectionId: "west",
     seatingPlanId: "1",
     name: "West Stand",
-    type: "Seated",
+    category: "Seated",
     seatType: "Premium",
     color: "#f59e0b",
-    posX: 100,
-    posY: 220,
-    width: 120,
-    height: 360,
+    geometry: {
+      geometryType: "Arc",
+      centerX: 500,
+      centerY: 400,
+      innerRadius: 250,
+      outerRadius: 350,
+      startAngle: 160,
+      endAngle: 200,
+    },
     isActive: true,
   },
   {
     sectionId: "east",
     seatingPlanId: "1",
     name: "East Stand",
-    type: "Seated",
+    category: "Seated",
     seatType: "Premium",
     color: "#f59e0b",
-    posX: 780,
-    posY: 220,
-    width: 120,
-    height: 360,
+    geometry: {
+      geometryType: "Arc",
+      centerX: 500,
+      centerY: 400,
+      innerRadius: 250,
+      outerRadius: 350,
+      startAngle: 340,
+      endAngle: 380,
+    },
     isActive: true,
   },
 ],
@@ -101,16 +119,21 @@ const mockLayout: SeatingPlanLayout = {
     type: "STAGE",
     label: "FIELD",
     posX: 300,
-    posY: 250,
+    posY: 275,
     width: 400,
-    height: 300,
-  }
-]
+    height: 250,
+  },
+],
 };
 
-export default function EventBookingPage() {
-  const params = useParams();
-  const eventId = params.eventId as string;
+type Props = {
+  params: {
+    eventId: string;
+  };
+};
+export default async function EventBookingPage({ params }: Props) {
+  const { eventId } = await params;
+  
 
   return (
     <div className="container mx-auto py-8 px-4">
