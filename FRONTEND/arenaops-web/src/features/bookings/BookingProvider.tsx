@@ -29,7 +29,7 @@ function reducer(state: BookingState, action: BookingAction): BookingState {
     case "SELECT_SECTION":
       return {
         selectedSectionId: action.payload,
-        selectedSeats: [], // reset seats when section changes
+        selectedSeats: [],
       };
 
     case "TOGGLE_SEAT":
@@ -62,6 +62,7 @@ type BookingContextType = {
   resetSection: () => void;
   clearAll: () => void;
   totalSeats: number;
+  canProceed: boolean;
 };
 
 const BookingContext = createContext<BookingContextType | null>(null);
@@ -70,6 +71,8 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   const value = useMemo(() => {
+    const totalSeats = state.selectedSeats.length;
+
     return {
       state,
       selectSection: (id: string) =>
@@ -82,7 +85,8 @@ export function BookingProvider({ children }: { children: ReactNode }) {
 
       clearAll: () => dispatch({ type: "CLEAR_ALL" }),
 
-      totalSeats: state.selectedSeats.length,
+      totalSeats,
+      canProceed: totalSeats > 0,
     };
   }, [state]);
 
