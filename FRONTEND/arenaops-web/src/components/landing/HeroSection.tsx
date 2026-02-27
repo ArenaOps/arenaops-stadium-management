@@ -45,6 +45,7 @@ export function HeroSection() {
 
     return () => clearInterval(interval);
   }, []);
+
   return (
     <section className={styles.heroContainer} data-theme={theme}>
       <Image
@@ -83,8 +84,8 @@ export function HeroSection() {
         {/* Event Badge */}
         <div
           className={cn(
-            "inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary-foreground mb-8 backdrop-blur-sm shadow-[0_0_15px_rgba(var(--primary),0.3)]",
-            styles.liveBadge, // Apply pulse animation from SCSS
+            "inline-flex mt-20 items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary-foreground mb-8 backdrop-blur-sm shadow-[0_0_15px_rgba(var(--primary),0.3)]",
+            styles.liveBadge,
           )}
         >
           <span className="relative flex h-2 w-2 mr-3">
@@ -94,36 +95,31 @@ export function HeroSection() {
           NEXT MATCH: RED DRAGONS vs BLUE KNIGHTS
         </div>
 
-        {/* Headline with Text Pressure Effect */}
         <div className="flex flex-col items-center mb-8 animate-fade-in-up delay-100">
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-heading tracking-tighter text-transparent bg-clip-text bg-linear-to-b from-white to-white/70 uppercase leading-none">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold font-heading tracking-tighter text-transparent bg-clip-text uppercase leading-none">
             EXPERIENCE THE
           </h1>
 
-          <h1 className="text-6xl md:text-8xl lg:text-9xl font-heading tracking-tighter text-transparent bg-clip-text bg-linear-to-r from-primary via-green-600 to-green-500 mt-2 uppercase leading-none">
+
+
+          <h1 className="text-6xl md:text-8xl lg:text-9xl font-extrabold font-heading tracking-tighter text-transparent bg-clip-text  mt-2 uppercase leading-none">
             IMPOSSIBLE
           </h1>
         </div>
 
-        {/* Subheadline */}
-        <p className="max-w-2xl text-lg md:text-xl text-slate-300 font-bold mb-10 leading-relaxed tracking-wide animate-fade-in-up delay-200">
-          The future of stadium management is here. Book seats, explore venues,
-          and immerse yourself in the game like never before.
-        </p>
 
-        {/* CTA Buttons */}
+
         <div className="flex flex-col sm:flex-row gap-6 justify-center items-center w-full sm:w-auto mb-16 animate-fade-in-up delay-200 z-50">
           <Link href={"/events"}>
             <Button
               variant="outline"
-              size="lg"
+              size="sm"
               className="
   h-14 px-10 text-lg font-medium
-  border
-  border-(--btn-outline)
-  text-(--btn-bg)
-  hover:bg-(--btn-bg)
-  hover:text-(--btn-text)
+  border border-green-600
+  text-[#10b981]
+  hover:bg-[#10b981]
+  hover:text-white
   transition-all duration-300
   rounded-full group cursor-pointer
   "
