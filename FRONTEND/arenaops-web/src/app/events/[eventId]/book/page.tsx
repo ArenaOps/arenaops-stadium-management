@@ -1,131 +1,139 @@
-"use client";
 
-import { useParams } from "next/navigation";
-import { SeatMapRenderer } from "@/components/seat-map/SeatMapRenderer";
-import type { SeatMapConfig } from "@/components/seat-map/types";
+import { SeatMapContainer } from "@/components/seat-map/SeatMapContainer";
+import type { SeatingPlanLayout } from "@/components/seat-map/types";
 
-/**
- * Mock seat map configuration for Stage 1
- * This will be replaced with API data in Stage 3
- */
-const mockEventSeatMap: SeatMapConfig = {
-  id: "event-seat-map-mock",
-  name: "Concert Arena",
-  viewBox: {
-    x: 0,
-    y: 0,
-    width: 1000,
-    height: 800,
+const mockLayout: SeatingPlanLayout = {
+  stadium: {
+    stadiumId: "1",
+    name: "Concert Arena",
+    address: "",
+    city: "",
+    state: "",
+    country: "",
+    pincode: "",
+    latitude: 0,
+    longitude: 0,
+    isApproved: true,
+    isActive: true,
+    createdAt: new Date().toISOString(),
   },
-  sections: [
-    // North Section
-    {
-      type: "rect",
-      id: "north-section",
-      label: "North Stand",
-      x: 350,
-      y: 50,
-      width: 300,
-      height: 100,
-      colorKey: "standard",
+  seatingPlan: {
+    seatingPlanId: "1",
+    stadiumId: "1",
+    name: "Concert Layout",
+    description: "",
+    isActive: true,
+    createdAt: new Date().toISOString(),
+  },
+sections: [
+  {
+    sectionId: "north",
+    seatingPlanId: "1",
+    name: "North Stand",
+    category: "Seated",
+    seatType: "Standard",
+    color: "#3b82f6",
+    geometry: {
+      geometryType: "Arc",
+      centerX: 500,
+      centerY: 400,
+      innerRadius: 250,
+      outerRadius: 350,
+      startAngle: 200,
+      endAngle: 340,
     },
-    // South Section
-    {
-      type: "rect",
-      id: "south-section",
-      label: "South Stand",
-      x: 350,
-      y: 650,
-      width: 300,
-      height: 100,
-      colorKey: "standard",
+    isActive: true,
+  },
+  {
+    sectionId: "south",
+    seatingPlanId: "1",
+    name: "South Stand",
+    category: "Seated",
+    seatType: "Standard",
+    color: "#3b82f6",
+    geometry: {
+      geometryType: "Arc",
+      centerX: 500,
+      centerY: 400,
+      innerRadius: 250,
+      outerRadius: 350,
+      startAngle: 20,
+      endAngle: 160,
     },
-    // East Section
-    {
-      type: "rect",
-      id: "east-section",
-      label: "East Stand",
-      x: 700,
-      y: 300,
-      width: 100,
-      height: 200,
-      colorKey: "premium",
+    isActive: true,
+  },
+  {
+    sectionId: "west",
+    seatingPlanId: "1",
+    name: "West Stand",
+    category: "Seated",
+    seatType: "Premium",
+    color: "#f59e0b",
+    geometry: {
+      geometryType: "Arc",
+      centerX: 500,
+      centerY: 400,
+      innerRadius: 250,
+      outerRadius: 350,
+      startAngle: 160,
+      endAngle: 200,
     },
-    // West Section
-    {
-      type: "rect",
-      id: "west-section",
-      label: "West Stand",
-      x: 200,
-      y: 300,
-      width: 100,
-      height: 200,
-      colorKey: "premium",
+    isActive: true,
+  },
+  {
+    sectionId: "east",
+    seatingPlanId: "1",
+    name: "East Stand",
+    category: "Seated",
+    seatType: "Premium",
+    color: "#f59e0b",
+    geometry: {
+      geometryType: "Arc",
+      centerX: 500,
+      centerY: 400,
+      innerRadius: 250,
+      outerRadius: 350,
+      startAngle: 340,
+      endAngle: 380,
     },
-    // VIP Section (Polygon)
+    isActive: true,
+  },
+],
+  seats: [
     {
-      type: "polygon",
-      id: "vip-section",
-      label: "VIP",
-      points: [
-        { x: 400, y: 350 },
-        { x: 600, y: 350 },
-        { x: 600, y: 450 },
-        { x: 400, y: 450 },
-      ],
-      colorKey: "vip",
-    },
-    // Stage (Blocked)
-    {
-      type: "rect",
-      id: "stage",
-      label: "Stage",
-      x: 400,
-      y: 200,
-      width: 200,
-      height: 80,
-      colorKey: "blocked",
+      seatId: "s1",
+      sectionId: "north",
+      rowLabel: "A",
+      seatNumber: 1,
+      seatLabel: "A1",
+      posX: 400,
+      posY: 200,
+      isActive: true,
+      isAccessible: false,
     },
   ],
-  colors: {
-    standard: {
-      name: "Standard",
-      fill: "#3b82f6",
-      stroke: "#1e40af",
-      opacity: 0.85,
-      hoverFill: "#1d4ed8",
-    },
-    premium: {
-      name: "Premium",
-      fill: "#f59e0b",
-      stroke: "#d97706",
-      opacity: 0.85,
-      hoverFill: "#d97706",
-    },
-    vip: {
-      name: "VIP",
-      fill: "#ec4899",
-      stroke: "#be185d",
-      opacity: 0.85,
-      hoverFill: "#be185d",
-    },
-    blocked: {
-      name: "Not Available",
-      fill: "#6b7280",
-      stroke: "#374151",
-      opacity: 0.6,
-      hoverFill: "#6b7280",
-    },
+  landmarks: [
+  {
+    featureId: "field",
+    seatingPlanId: "1",
+    type: "STAGE",
+    label: "FIELD",
+    posX: 300,
+    posY: 275,
+    width: 400,
+    height: 250,
   },
-  metadata: {
-    capacity: 5000,
-    region: "North America",
-  },
+],
 };
 
-export default function EventBookingPage() {
-  const params = useParams();
-  const eventId = params.eventId as string;
+type Props = {
+  params: {
+    eventId: string;
+  };
+};
+export default async function EventBookingPage({ params }: Props) {
+  const { eventId } = await params;
+  
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -141,19 +149,7 @@ export default function EventBookingPage() {
 
       {/* Seat Map */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <SeatMapRenderer
-          config={mockEventSeatMap}
-          width="100%"
-          height="600px"
-          showLabels={true}
-        />
-      </div>
-
-      {/* Info Box */}
-      <div className="mt-6 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-        <p className="text-sm text-blue-800 dark:text-blue-200">
-          <strong>Stage 1:</strong> This is a static seat map. Seat selection, booking, and payment features will be added in future stages.
-        </p>
+        <SeatMapContainer layout={mockLayout} />
       </div>
     </div>
   );

@@ -32,11 +32,16 @@ builder.Services.AddScoped<IDapperQueryService, DapperQueryService>();
 builder.Services.AddScoped<IStadiumRepository, StadiumRepository>();
 builder.Services.AddScoped<ISeatingPlanRepository, SeatingPlanRepository>();
 builder.Services.AddScoped<ISectionRepository, SectionRepository>();
+builder.Services.AddScoped<ISeatRepository, SeatRepository>();
+builder.Services.AddScoped<ILandmarkRepository, LandmarkRepository>();
 
 // Services
 builder.Services.AddScoped<IStadiumService, StadiumService>();
 builder.Services.AddScoped<ISeatingPlanService, SeatingPlanService>();
 builder.Services.AddScoped<ISectionService, SectionService>();
+builder.Services.AddScoped<ISeatService, SeatService>();
+builder.Services.AddScoped<ILandmarkService, LandmarkService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 // 3a-redis. Redis Cache
 var redisConnectionString = builder.Configuration.GetValue<string>("Redis:ConnectionString") ?? "localhost:6379";
@@ -53,6 +58,10 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 
 builder.Services.Configure<CacheSettings>(builder.Configuration.GetSection("CacheSettings"));
 builder.Services.AddScoped<ICacheService, RedisCacheService>();
+
+// Rate Limiting — Redis-backed, config-driven
+builder.Services.Configure<ArenaOps.Shared.Models.RateLimitSettings>(
+    builder.Configuration.GetSection("RateLimiting"));
 
 // 3a. Register EF Core DbContext
 builder.Services.AddDbContext<CoreDbContext>(options =>
@@ -159,6 +168,9 @@ var app = builder.Build();
 // 6. Configure the HTTP request pipeline.
 app.UseSerilogRequestLogging();
 app.UseCors("AllowFrontend");
+
+// Rate limiting — Redis-backed, before Auth
+app.UseMiddleware<ArenaOps.Shared.Middleware.RedisRateLimitMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

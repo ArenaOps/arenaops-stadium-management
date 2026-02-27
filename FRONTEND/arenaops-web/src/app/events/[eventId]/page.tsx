@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { CalendarDays, Clock, MapPin, Users } from "lucide-react";
-import type { Metadata } from "next";
 import Image from "next/image";
 
 type Props = {
@@ -9,18 +8,18 @@ type Props = {
   };
 };
 
-export async function generateMetadata(
-  { params }: Props
-): Promise<Metadata> {
+export async function generateMetadata({ params }: Props) {
+  const { eventId } = await params;
+
   return {
-    title: `Event ${params.eventId} | ArenaOps`,
-    description: `Details for event ${params.eventId}`,
+    title: `Event ${eventId} | ArenaOps`,
+    description: `Details for event ${eventId}`,
   };
 }
 
 
-export default function EventDetailPage({ params }: Props) {
-  const eventId = params.eventId;
+export default async function EventDetailPage({ params }: Props) {
+  const { eventId } = await params;
 
   return (
     <div className="min-h-screen bg-linear-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900">
@@ -143,6 +142,7 @@ export default function EventDetailPage({ params }: Props) {
               </p>
             </div>
 
+<<<<<<< HEAD
             {/* CTA Button */}
             <Link
               href={`/events/${eventId}/book`}
@@ -158,6 +158,23 @@ export default function EventDetailPage({ params }: Props) {
             >
               Back to Home
             </Link>
+=======
+    {/* CTA Button */}
+    <Link
+      href={`/events/${eventId}/book`}
+      className="block w-full text-center py-3 bg-primary text-primary-foreground font-semibold rounded-var(--radius-md) shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+    >
+      Book Tickets
+    </Link>
+
+    {/* Secondary Button */}
+    <Link
+      href="/"
+      className="block w-full text-center py-3 bg-secondary text-secondary-foreground font-medium rounded-var(--radius-md) hover:bg-secondary/80 transition-colors"
+    >
+      Back to Home
+    </Link>
+>>>>>>> main
 
           </div>
         </div>
