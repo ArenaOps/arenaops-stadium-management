@@ -1,25 +1,25 @@
 /**
- * Seat Map Components
- * SVG-based stadium section renderer
+ * Seat map module exports
  */
 
 export { SeatMapRenderer } from "./SeatMapRenderer";
-export type {
-    Point,
-    SectionColor,
-    RectSection,
-    PolygonSection,
-    CircleSection,
-    Section,
-    SeatMapConfig,
-    SeatMapRendererProps,
-    SectionState,
-    SeatMapState,
-} from "./types";
+export { SeatMapContainer } from "./SeatMapContainer";
+export { SeatGridRenderer } from "./SeatGridRenderer";
+
 export {
-    defaultStadiumConfig,
-    compactStadiumConfig,
-    footballStadiumConfig,
-    getConfigById,
-    STADIUM_CONFIGS,
-} from "./seatMap.config";
+  EIGHT_DIRECTION_SECTION_CONFIG,
+  buildDirectionalStadiumLayout,
+} from "./stadiumLayout.config";
+
+export type {
+  Stadium,
+  SeatingPlan,
+  SeatTemplate,
+  LandmarkTemplate,
+  SectionGeometry,
+  RectGeometry,
+  ArcGeometry,
+  SectionCategory,
+  SectionTemplate,
+  SeatingPlanLayout,
+} from "./types";

@@ -2,7 +2,6 @@
 
 import React, { useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { useBooking } from "@/features/bookings/useBooking";
 
 import type {
   SectionTemplate,
@@ -21,9 +20,7 @@ interface Props {
   viewBox?: string;
 }
 
-/* =========================
-   Arc Math Utilities
-========================= */
+const normalizeCoord = (value: number) => Number(value.toFixed(3));
 
 const polarToCartesian = (
   cx: number,
@@ -33,8 +30,8 @@ const polarToCartesian = (
 ) => {
   const radians = (angle - 90) * (Math.PI / 180);
   return {
-    x: cx + radius * Math.cos(radians),
-    y: cy + radius * Math.sin(radians),
+    x: normalizeCoord(cx + radius * Math.cos(radians)),
+    y: normalizeCoord(cy + radius * Math.sin(radians)),
   };
 };
 
@@ -73,7 +70,7 @@ const generateArcSeats = (
   rowCount: number,
   seatsPerRow: number
 ) => {
-  const seats = [];
+  const seats: Array<{ x: number; y: number }> = [];
   const radiusStep = (outerRadius - innerRadius) / rowCount;
   const angleStep = (endAngle - startAngle) / seatsPerRow;
 
@@ -81,18 +78,13 @@ const generateArcSeats = (
     const currentRadius = innerRadius + radiusStep * row + radiusStep / 2;
 
     for (let seat = 0; seat < seatsPerRow; seat++) {
-      const currentAngle =
-        startAngle + angleStep * seat + angleStep / 2;
-
+      const currentAngle = startAngle + angleStep * seat + angleStep / 2;
       const radians = (currentAngle - 90) * (Math.PI / 180);
 
-      const rawX = centerX + currentRadius * Math.cos(radians);
-const rawY = centerY + currentRadius * Math.sin(radians);
+      const x = normalizeCoord(centerX + currentRadius * Math.cos(radians));
+      const y = normalizeCoord(centerY + currentRadius * Math.sin(radians));
 
-seats.push({
-  x: Number(rawX.toFixed(3)),
-  y: Number(rawY.toFixed(3)),
-});
+      seats.push({ x, y });
     }
   }
 
@@ -112,18 +104,12 @@ export const SeatMapRenderer = React.forwardRef<SVGSVGElement, Props>(
     },
     ref
   ) => {
-    // ✅ Hook MUST be inside component
-    const { state, toggleSeat } = useBooking();
-
     const activeSections = useMemo(() => {
       if (!Array.isArray(sections)) {
-        console.error("Sections is not array:", sections);
         return [];
       }
 
-      return sections.filter(
-        (s) => s && s.geometry && s.isActive !== false
-      );
+      return sections.filter((s) => s && s.geometry && s.isActive !== false);
     }, [sections]);
 
     return (
@@ -134,16 +120,33 @@ export const SeatMapRenderer = React.forwardRef<SVGSVGElement, Props>(
         height={height}
         preserveAspectRatio="xMidYMid meet"
         className={cn(
-          "rounded-lg border bg-gray-50 dark:bg-gray-900",
+          "rounded-lg border seat-map-canvas seat-map-canvas--overview",
           className
         )}
       >
+        <defs>
+          <linearGradient id="fieldBaseGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3da54f" />
+            <stop offset="100%" stopColor="#287a3a" />
+          </linearGradient>
+
+          <pattern id="fieldStripePattern" width="28" height="28" patternUnits="userSpaceOnUse">
+            <rect width="28" height="28" fill="#329147" />
+            <rect width="14" height="28" fill="#226f35" opacity="0.28" />
+          </pattern>
+
+          <pattern id="fieldNoisePattern" width="14" height="14" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="3" r="0.8" fill="#ecfdf3" opacity="0.18" />
+            <circle cx="8" cy="5" r="0.7" fill="#dcfce7" opacity="0.15" />
+            <circle cx="5" cy="10" r="0.9" fill="#f0fdf4" opacity="0.12" />
+            <circle cx="12" cy="11" r="0.6" fill="#dcfce7" opacity="0.14" />
+          </pattern>
+        </defs>
         {activeSections.map((section) => {
           if (!section || !section.geometry) return null;
 
           const { geometry } = section;
 
-          // ================= RECT =================
           if (geometry.geometryType === "Rect") {
             const g = geometry as RectGeometry;
 
@@ -180,7 +183,6 @@ export const SeatMapRenderer = React.forwardRef<SVGSVGElement, Props>(
             );
           }
 
-          // ================= ARC =================
           if (geometry.geometryType === "Arc") {
             const g = geometry as ArcGeometry;
 
@@ -194,16 +196,8 @@ export const SeatMapRenderer = React.forwardRef<SVGSVGElement, Props>(
             );
 
             const midAngle = (g.startAngle + g.endAngle) / 2;
-            const midRadius =
-              (g.innerRadius + g.outerRadius) / 2;
-
-            const labelPos = polarToCartesian(
-              g.centerX,
-              g.centerY,
-              midRadius,
-              midAngle
-            );
-
+            const midRadius = (g.innerRadius + g.outerRadius) / 2;
+            const labelPos = polarToCartesian(g.centerX, g.centerY, midRadius, midAngle);
             const seatPositions = generateArcSeats(
               g.centerX,
               g.centerY,
@@ -211,8 +205,8 @@ export const SeatMapRenderer = React.forwardRef<SVGSVGElement, Props>(
               g.outerRadius,
               g.startAngle,
               g.endAngle,
-              6,
-              24
+              4,
+              20
             );
 
             return (
@@ -221,35 +215,32 @@ export const SeatMapRenderer = React.forwardRef<SVGSVGElement, Props>(
                 onClick={() => onSectionClick?.(section)}
                 className="cursor-pointer transition-opacity hover:opacity-90"
               >
-                <path
-                  d={pathData}
-                  fill={section.color}
-                  stroke="#1f2937"
-                  strokeWidth={1}
-                />
+                <path d={pathData} fill={section.color} stroke="#1f2937" strokeWidth={1} />
 
-                {/* Seats */}
-                {seatPositions.map((seat, index) => {
-                  const seatId = `${section.sectionId}-seat-${index}`;
-                  const isSelected =
-                    state.selectedSeats.includes(seatId);
-
-                  return (
-                    <circle
-                      key={seatId}
-                      cx={seat.x}
-                      cy={seat.y}
-                      r={4}
-                      fill={isSelected ? "#10b981" : "white"}
+                {seatPositions.map((seat, index) => (
+                  <g key={`${section.sectionId}-seat-shape-${index}`} pointerEvents="none">
+                    <rect
+                      x={seat.x - 3}
+                      y={seat.y - 3}
+                      width={6}
+                      height={6}
+                      rx={1.5}
+                      fill="#f8fafc"
                       stroke="#111827"
-                      strokeWidth={0.5}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleSeat(seatId);
-                      }}
+                      strokeWidth={0.35}
+                      opacity={0.9}
                     />
-                  );
-                })}
+                    <rect
+                      x={seat.x - 2.2}
+                      y={seat.y - 5.2}
+                      width={4.4}
+                      height={1.4}
+                      rx={0.7}
+                      fill="#cbd5e1"
+                      opacity={0.95}
+                    />
+                  </g>
+                ))}
 
                 <text
                   x={labelPos.x}
@@ -270,31 +261,129 @@ export const SeatMapRenderer = React.forwardRef<SVGSVGElement, Props>(
           return null;
         })}
 
-        {/* Landmarks */}
-        {landmarks?.map((feature) => (
-          <g key={feature.featureId}>
-            <rect
-              x={feature.posX}
-              y={feature.posY}
-              width={feature.width}
-              height={feature.height}
-              rx={4}
-              fill="#6b7280"
-              opacity={0.7}
-            />
-            <text
-              x={feature.posX + feature.width / 2}
-              y={feature.posY + feature.height / 2}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fontSize="12"
-              fill="white"
-              pointerEvents="none"
-            >
-              {feature.label}
-            </text>
-          </g>
-        ))}
+        {landmarks?.map((feature) => {
+          const label = feature.label.toUpperCase();
+          const type = feature.type.toUpperCase();
+          const isField =
+            type === "FIELD" ||
+            label.includes("FIELD") ||
+            label.includes("PITCH") ||
+            label.includes("GROUND");
+
+          if (isField) {
+            const centerX = feature.posX + feature.width / 2;
+            const centerY = feature.posY + feature.height / 2;
+
+            return (
+              <g key={feature.featureId}>
+                <rect
+                  x={feature.posX}
+                  y={feature.posY}
+                  width={feature.width}
+                  height={feature.height}
+                  rx={8}
+                  fill="url(#fieldBaseGradient)"
+                />
+                <rect
+                  x={feature.posX}
+                  y={feature.posY}
+                  width={feature.width}
+                  height={feature.height}
+                  rx={8}
+                  fill="url(#fieldStripePattern)"
+                  opacity={0.82}
+                />
+                <rect
+                  x={feature.posX}
+                  y={feature.posY}
+                  width={feature.width}
+                  height={feature.height}
+                  rx={8}
+                  fill="url(#fieldNoisePattern)"
+                  opacity={0.2}
+                />
+
+                <rect
+                  x={feature.posX}
+                  y={feature.posY}
+                  width={feature.width}
+                  height={feature.height}
+                  rx={8}
+                  fill="none"
+                  stroke="#f0fdf4"
+                  strokeWidth={1.2}
+                  opacity={0.5}
+                />
+                <line
+                  x1={centerX}
+                  y1={feature.posY + 8}
+                  x2={centerX}
+                  y2={feature.posY + feature.height - 8}
+                  stroke="#f0fdf4"
+                  strokeWidth={1}
+                  opacity={0.35}
+                />
+                <line
+                  x1={feature.posX + 8}
+                  y1={centerY}
+                  x2={feature.posX + feature.width - 8}
+                  y2={centerY}
+                  stroke="#f0fdf4"
+                  strokeWidth={1}
+                  opacity={0.25}
+                />
+                <circle
+                  cx={centerX}
+                  cy={centerY}
+                  r={Math.min(feature.width, feature.height) * 0.12}
+                  fill="none"
+                  stroke="#f0fdf4"
+                  strokeWidth={1}
+                  opacity={0.25}
+                />
+
+                <text
+                  x={centerX}
+                  y={centerY}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize="12"
+                  fontWeight="600"
+                  fill="#f8fafc"
+                  opacity={0.95}
+                  pointerEvents="none"
+                >
+                  {feature.label}
+                </text>
+              </g>
+            );
+          }
+
+          return (
+            <g key={feature.featureId}>
+              <rect
+                x={feature.posX}
+                y={feature.posY}
+                width={feature.width}
+                height={feature.height}
+                rx={4}
+                fill="#6b7280"
+                opacity={0.7}
+              />
+              <text
+                x={feature.posX + feature.width / 2}
+                y={feature.posY + feature.height / 2}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize="12"
+                fill="white"
+                pointerEvents="none"
+              >
+                {feature.label}
+              </text>
+            </g>
+          );
+        })}
       </svg>
     );
   }
