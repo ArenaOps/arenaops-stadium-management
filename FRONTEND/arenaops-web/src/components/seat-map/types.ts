@@ -1,149 +1,108 @@
-/**
- * Seat Map Types
- * Defines TypeScript interfaces for stadium section rendering
- */
+export interface Stadium {
+  stadiumId: string;
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  pincode: string;
+  latitude: number;
+  longitude: number;
+  isApproved: boolean;
+  isActive: boolean;
+  createdAt: string;
+}
 
-/**
- * Represents a point in 2D space
- */
-export type Point = {
-    x: number;
-    y: number;
-};
+export interface SeatingPlan {
+  seatingPlanId: string;
+  stadiumId: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+}
 
-/**
- * Represents the color and status information for a section
- */
-export type SectionColor = {
-    name: string;
-    fill: string;
-    stroke?: string;
-    opacity?: number;
-    hoverFill?: string;
-};
+export interface SeatTemplate {
+  seatId: string;
+  sectionId: string;
 
-/**
- * Represents a rectangular section of the stadium
- */
-export type RectSection = {
-    type: "rect";
-    id: string;
-    label: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    colorKey: string;
-    rotation?: number;
-};
+  rowLabel: string;
+  seatNumber: number;
+  seatLabel: string;
 
-/**
- * Represents a polygon section (arbitrary shape)
- */
-export type PolygonSection = {
-    type: "polygon";
-    id: string;
-    label: string;
-    points: Point[];
-    colorKey: string;
-};
+  posX: number;
+  posY: number;
 
-/**
- * Represents a circular section
- */
-export type CircleSection = {
-    type: "circle";
-    id: string;
-    label: string;
-    cx: number;
-    cy: number;
-    r: number;
-    colorKey: string;
-};
+  isActive: boolean;
+  isAccessible: boolean;
+}
 
-/**
- * Union type for any section shape
- */
-export type Section = RectSection | PolygonSection | CircleSection;
+export interface LandmarkTemplate {
+  featureId: string;
+  seatingPlanId: string;
 
-/**
- * Complete seat map configuration
- */
-export type SeatMapConfig = {
-    /** Unique identifier for this seat map */
-    id: string;
-    
-    /** Human-readable name */
-    name: string;
-    
-    /** SVG viewBox dimensions */
-    viewBox: {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    };
-    
-    /** Stadium sections to render */
-    sections: Section[];
-    
-    /** Color palette for sections */
-    colors: Record<string, SectionColor>;
-    
-    /** Optional metadata */
-    metadata?: {
-        capacity?: number;
-        region?: string;
-        lastUpdated?: string;
-    };
-};
+  type: "STAGE" | "GATE" | "EXIT" | "RESTROOM" | string;
 
-/**
- * Props for SeatMapRenderer component
- */
-export type SeatMapRendererProps = {
-    /** Seat map configuration */
-    config: SeatMapConfig;
-    
-    /** Width of SVG container (CSS) */
-    width?: string | number;
-    
-    /** Height of SVG container (CSS) */
-    height?: string | number;
-    
-    /** CSS class for styling */
-    className?: string;
-    
-    /** Callback when section is clicked (for future interaction) */
-    onSectionClick?: (section: Section) => void;
-    
-    /** Callback when section is hovered (for future interaction) */
-    onSectionHover?: (section: Section | null) => void;
-    
-    /** Show section labels */
-    showLabels?: boolean;
-    
-    /** Default color key if section's color is not found */
-    defaultColorKey?: string;
-    
-    /** SVG styling options */
-    svgProps?: React.SVGAttributes<SVGSVGElement>;
-};
+  label: string;
 
-/**
- * Represents the state of a section
- */
-export type SectionState = {
-    id: string;
-    status: "available" | "booked" | "blocked" | "selected";
-    occupancy?: number;
-    capacity?: number;
-};
+  posX: number;
+  posY: number;
+  width: number;
+  height: number;
+}
 
-/**
- * Seat map state including all sections and their current status
- */
-export type SeatMapState = {
-    config: SeatMapConfig;
-    sectionStates: Record<string, SectionState>;
-};
+export type SectionGeometry = RectGeometry | ArcGeometry;
+
+export interface RectGeometry {
+  geometryType: "Rect";
+  posX: number;
+  posY: number;
+  width: number;
+  height: number;
+  borderRadius?: number;
+}
+
+export interface ArcGeometry {
+  geometryType: "Arc";
+  centerX: number;
+  centerY: number;
+  innerRadius: number;
+  outerRadius: number;
+  startAngle: number; // degrees
+  endAngle: number;   // degrees
+}
+
+export type SectionCategory = "Seated" | "Standing";
+
+export interface SectionTemplate {
+  sectionId: string;
+  seatingPlanId: string;
+  name: string;
+
+  /** Business type */
+  category: SectionCategory;
+
+  /** VIP / Premium / Standard */
+  seatType: string;
+
+  /** Display color */
+  color: string;
+
+  /** Geometry definition */
+  geometry: SectionGeometry;
+
+  /** Max capacity (used for Standing sections) */
+  capacity?: number;
+
+  isActive?: boolean;
+}
+
+export interface SeatingPlanLayout {
+  stadium: Stadium;
+  seatingPlan: SeatingPlan;
+  sections: SectionTemplate[];
+  seats: SeatTemplate[];
+  landmarks: LandmarkTemplate[];
+}
+
+
