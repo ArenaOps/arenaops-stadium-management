@@ -11,6 +11,7 @@ using ArenaOps.CoreService.Application.Models;
 using ArenaOps.CoreService.Infrastructure.Repositories;
 using ArenaOps.CoreService.Infrastructure.Services;
 using ArenaOps.Shared.Middleware;
+using ArenaOps.CoreService.API.Hubs;
 using ArenaOps.Shared.Interfaces;
 using ArenaOps.Shared.Services;
 
@@ -110,6 +111,7 @@ builder.Services.AddAuthorization(options =>
 
 // 3d. Controllers
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 
 // 3e. Swagger/OpenAPI with JWT Bearer support
 builder.Services.AddEndpointsApiExplorer();
@@ -202,6 +204,7 @@ app.UseAuthorization();
 app.MapHealthChecks("/health");
 app.MapGet("/", () => "ArenaOps CoreService API is running.");
 app.MapControllers();
+app.MapHub<SeatStatusHub>("/hubs/seat-status");
 
 try
 {
