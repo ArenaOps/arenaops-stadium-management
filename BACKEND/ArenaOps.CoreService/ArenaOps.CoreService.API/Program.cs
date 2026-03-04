@@ -42,6 +42,7 @@ builder.Services.AddScoped<ITicketTypeRepository, TicketTypeRepository>();
 builder.Services.AddScoped<IEventRepository, EventRepository>();
 builder.Services.AddScoped<IEventSlotRepository, EventSlotRepository>();
 builder.Services.AddScoped<ISectionTicketTypeRepository, SectionTicketTypeRepository>();
+builder.Services.AddScoped<IOrganizerProfileRepository, OrganizerProfileRepository>();
 
 // Services
 builder.Services.AddScoped<IStadiumService, StadiumService>();
@@ -52,6 +53,7 @@ builder.Services.AddScoped<ILandmarkService, LandmarkService>();
 builder.Services.AddScoped<IEventLayoutService, EventLayoutService>();
 builder.Services.AddScoped<ITicketTypeService, TicketTypeService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IOrganizerProfileService, OrganizerProfileService>();
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<ICoreEmailService, CoreEmailService>();
 builder.Services.AddScoped<IEventSlotService, EventSlotService>();
