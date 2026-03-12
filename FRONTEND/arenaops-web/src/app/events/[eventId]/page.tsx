@@ -143,21 +143,21 @@ export default async function EventDetailPage({ params }: Props) {
             </div>
 
 <<<<<<< HEAD
-            {/* CTA Button */}
-            <Link
-              href={`/events/${eventId}/book`}
-              className="block w-full text-center py-3 bg-primary text-primary-foreground font-semibold rounded-[var(--radius-md)] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
-            >
-              Book Tickets
-            </Link>
+  {/* CTA Button */ }
+  <Link
+    href={`/events/${eventId}/book`}
+    className="block w-full text-center py-3 bg-primary text-primary-foreground font-semibold rounded-[var(--radius-md)] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+  >
+    Book Tickets
+  </Link>
 
-            {/* Secondary Button */}
-            <Link
-              href="/"
-              className="block w-full text-center py-3 bg-secondary text-secondary-foreground font-medium rounded-[var(--radius-md)] hover:bg-secondary/80 transition-colors"
-            >
-              Back to Home
-            </Link>
+  {/* Secondary Button */ }
+  <Link
+    href="/"
+    className="block w-full text-center py-3 bg-secondary text-secondary-foreground font-medium rounded-[var(--radius-md)] hover:bg-secondary/80 transition-colors"
+  >
+    Back to Home
+  </Link>
 =======
     {/* CTA Button */}
     <Link
@@ -176,10 +176,10 @@ export default async function EventDetailPage({ params }: Props) {
     </Link>
 >>>>>>> main
 
-          </div>
-        </div>
+          </div >
+        </div >
 
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }

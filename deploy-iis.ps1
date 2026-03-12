@@ -74,6 +74,50 @@ if (Test-Path $coreKey) {
     Write-Host "  rsa-public.key  -> CoreService/Keys/" -ForegroundColor Green
 }
 
+# ---- STEP 5.5: PATCH web.config (Environment + Logging) ----
+Write-Host "[DEPLOY] Patching web.config files..." -ForegroundColor Yellow
+
+$services = @(
+    @{ Name = "AuthService"; Dll = "ArenaOps.AuthService.API.dll" },
+    @{ Name = "CoreService"; Dll = "ArenaOps.CoreService.API.dll" }
+)
+
+foreach ($svc in $services) {
+    $webConfigPath = "$iisDir\$($svc.Name)\web.config"
+    if (Test-Path $webConfigPath) {
+        $webConfigContent = @"
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <location path="." inheritInChildApplications="false">
+    <system.webServer>
+      <handlers>
+        <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
+      </handlers>
+      <aspNetCore processPath="dotnet" arguments=".\$($svc.Dll)" stdoutLogEnabled="true" stdoutLogFile=".\logs\stdout" hostingModel="inprocess">
+        <environmentVariables>
+          <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="Development" />
+        </environmentVariables>
+      </aspNetCore>
+    </system.webServer>
+  </location>
+</configuration>
+"@
+        Set-Content -Path $webConfigPath -Value $webConfigContent -Encoding UTF8
+        Write-Host "  $($svc.Name)/web.config patched (env=Development, logging=on)" -ForegroundColor Green
+    }
+}
+
+# ---- STEP 5.6: CHECK REDIS ----
+Write-Host "[DEPLOY] Checking Redis..." -ForegroundColor Yellow
+$redisRunning = Get-Process redis-server -ErrorAction SilentlyContinue
+if (-not $redisRunning) {
+    Write-Host "  WARNING: Redis is NOT running! Both services need Redis." -ForegroundColor Red
+    Write-Host "  Start Redis with: redis-server" -ForegroundColor Red
+}
+else {
+    Write-Host "  Redis is running" -ForegroundColor Green
+}
+
 # ---- STEP 6: START IIS ----
 Write-Host "`n[DEPLOY] Starting IIS..." -ForegroundColor Yellow
 iisreset /start | Out-Null

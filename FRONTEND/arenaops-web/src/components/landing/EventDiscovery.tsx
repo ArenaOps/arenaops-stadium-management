@@ -41,9 +41,9 @@ const mockEvents = [
     }
 ]
 interface EventDiscoveryProps {
-  events: Event[]
+    events: Event[]
 }
-export function EventDiscovery({events}:EventDiscoveryProps) {
+export function EventDiscovery({ events }: EventDiscoveryProps) {
 
     return (
         <section className={styles.eventDiscoverySection}>
@@ -102,13 +102,13 @@ export function EventDiscovery({events}:EventDiscoveryProps) {
 
                             <CardFooter className="pt-2">
                                 <Link href={`/events/${event.id}`}>
-                                <Button
-                                    className={cn("w-full h-12 text-sm font-bold uppercase tracking-widest", styles.bookButton)}
-                                    variant="outline"
+                                    <Button
+                                        className={cn("w-full h-12 text-sm font-bold uppercase tracking-widest", styles.bookButton)}
+                                        variant="outline"
                                     >
-                                    Book Tickets
-                                </Button>
-                                    </Link>
+                                        Book Tickets
+                                    </Button>
+                                </Link>
                             </CardFooter>
                         </Card>
                     ))}

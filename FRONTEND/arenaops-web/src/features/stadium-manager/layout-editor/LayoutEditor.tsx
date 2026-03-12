@@ -288,11 +288,11 @@ export function LayoutEditor() {
         overrides.size === 0
           ? generatedSeats
           : generatedSeats.map((seat) => {
-              const overrideType = overrides.get(seat.sectionId);
-              return overrideType
-                ? { ...seat, type: overrideType, price: layoutSettings.pricing[overrideType] }
-                : seat;
-            });
+            const overrideType = overrides.get(seat.sectionId);
+            return overrideType
+              ? { ...seat, type: overrideType, price: layoutSettings.pricing[overrideType] }
+              : seat;
+          });
 
       setSections(mergedSections);
       setSelectedSectionId(generatedSections[0]?.id ?? null);
@@ -358,8 +358,8 @@ export function LayoutEditor() {
         const rowRadius =
           layoutSettings.innerRadius +
           (seat.rowNumber - 1) *
-            ((layoutSettings.outerRadius - layoutSettings.innerRadius) /
-              Math.max(layoutSettings.rowsPerSection, 1));
+          ((layoutSettings.outerRadius - layoutSettings.innerRadius) /
+            Math.max(layoutSettings.rowsPerSection, 1));
         const resolvedType = resolveSeatTypeForRadius(
           rowRadius,
           layoutSettings.innerRadius,
@@ -889,54 +889,54 @@ export function LayoutEditor() {
 
       <div className="w-[340px] shrink-0 border-l border-slate-200 bg-white">
         <div className="h-full overflow-y-auto p-4">
-            <RightPanel
-              section={selectedSection}
-              savedPayload={savedPayload}
-              onUpdateSection={updateSection}
-              onSave={saveLayout}
-              layoutSettings={layoutSettings}
-              onLayoutSettingChange={updateLayoutSetting}
-              pricing={layoutSettings.pricing}
-              currency={layoutSettings.currency}
-              onUpdatePricing={updatePricing}
-              onUpdateCurrency={updateCurrency}
-              onSaveDraft={handleSaveDraft}
-              onRestoreDraft={handleRestoreDraft}
-              onDeleteDraft={handleDeleteDraft}
-              onPublish={handlePublish}
-              onPageLayout={handlePageLayout}
-              onExportJson={handleExportJson}
-              onCopyJson={handleCopyJson}
-              seatStats={{
-                totalSections:
-                  layoutType === "custom" ? sections.length : layoutSettings.totalSections,
-                rowsPerSection: layoutSettings.rowsPerSection,
-                seatsPerRow: layoutSettings.seatsPerRow,
-                totalSeats:
-                  (layoutType === "custom" ? sections.length : layoutSettings.totalSections) *
-                  layoutSettings.rowsPerSection *
-                  layoutSettings.seatsPerRow,
-                byType: seatStatsByType,
-              }}
-              selectedSeatIds={selectedSeatIds}
-              selectionMode={selectionMode}
-              onSelectionModeChange={setSelectionMode}
-              onBulkSeatTypeChange={applySeatTypeToSelection}
-              onDisableSelectedSeats={() => setSelectedSeatsDisabled(true)}
-              onEnableSelectedSeats={() => setSelectedSeatsDisabled(false)}
-              onClearSeatSelection={clearSeatSelection}
-              seatDensityMode={seatDensityMode}
-              onSeatDensityChange={setSeatDensityMode}
-              onResetView={handleResetView}
-              showSeatNumbers={showSeatNumbers}
-              onShowSeatNumbersChange={setShowSeatNumbers}
-              onUpdateSeatType={updateSectionSeatType}
-              onUpdateSeatOverride={setSectionSeatOverride}
-              actionMessage={actionMessage}
-              isProcessing={isProcessing}
-              draftSavedAt={draftSavedAt}
-              publishedAt={publishedAt}
-            />
+          <RightPanel
+            section={selectedSection}
+            savedPayload={savedPayload}
+            onUpdateSection={updateSection}
+            onSave={saveLayout}
+            layoutSettings={layoutSettings}
+            onLayoutSettingChange={updateLayoutSetting}
+            pricing={layoutSettings.pricing}
+            currency={layoutSettings.currency}
+            onUpdatePricing={updatePricing}
+            onUpdateCurrency={updateCurrency}
+            onSaveDraft={handleSaveDraft}
+            onRestoreDraft={handleRestoreDraft}
+            onDeleteDraft={handleDeleteDraft}
+            onPublish={handlePublish}
+            onPageLayout={handlePageLayout}
+            onExportJson={handleExportJson}
+            onCopyJson={handleCopyJson}
+            seatStats={{
+              totalSections:
+                layoutType === "custom" ? sections.length : layoutSettings.totalSections,
+              rowsPerSection: layoutSettings.rowsPerSection,
+              seatsPerRow: layoutSettings.seatsPerRow,
+              totalSeats:
+                (layoutType === "custom" ? sections.length : layoutSettings.totalSections) *
+                layoutSettings.rowsPerSection *
+                layoutSettings.seatsPerRow,
+              byType: seatStatsByType,
+            }}
+            selectedSeatIds={selectedSeatIds}
+            selectionMode={selectionMode}
+            onSelectionModeChange={setSelectionMode}
+            onBulkSeatTypeChange={applySeatTypeToSelection}
+            onDisableSelectedSeats={() => setSelectedSeatsDisabled(true)}
+            onEnableSelectedSeats={() => setSelectedSeatsDisabled(false)}
+            onClearSeatSelection={clearSeatSelection}
+            seatDensityMode={seatDensityMode}
+            onSeatDensityChange={setSeatDensityMode}
+            onResetView={handleResetView}
+            showSeatNumbers={showSeatNumbers}
+            onShowSeatNumbersChange={setShowSeatNumbers}
+            onUpdateSeatType={updateSectionSeatType}
+            onUpdateSeatOverride={setSectionSeatOverride}
+            actionMessage={actionMessage}
+            isProcessing={isProcessing}
+            draftSavedAt={draftSavedAt}
+            publishedAt={publishedAt}
+          />
         </div>
       </div>
     </div>
