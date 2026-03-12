@@ -38,11 +38,14 @@ builder.Services.AddScoped<ISectionRepository, SectionRepository>();
 builder.Services.AddScoped<ISeatRepository, SeatRepository>();
 builder.Services.AddScoped<ILandmarkRepository, LandmarkRepository>();
 builder.Services.AddScoped<IEventLayoutRepository, EventLayoutRepository>();
+builder.Services.AddScoped<IEventSectionRepository, EventSectionRepository>();
+builder.Services.AddScoped<IEventLandmarkRepository, EventLandmarkRepository>();
 builder.Services.AddScoped<ITicketTypeRepository, TicketTypeRepository>();
 builder.Services.AddScoped<IEventRepository, EventRepository>();
 builder.Services.AddScoped<IEventSlotRepository, EventSlotRepository>();
 builder.Services.AddScoped<ISectionTicketTypeRepository, SectionTicketTypeRepository>();
-builder.Services.AddScoped<IOrganizerProfileRepository, OrganizerProfileRepository>();
+builder.Services.AddScoped<IEventManagerProfileRepository, EventManagerProfileRepository>();
+builder.Services.AddScoped<IEventSeatRepository, EventSeatRepository>();
 
 // Services
 builder.Services.AddScoped<IStadiumService, StadiumService>();
@@ -51,13 +54,16 @@ builder.Services.AddScoped<ISectionService, SectionService>();
 builder.Services.AddScoped<ISeatService, SeatService>();
 builder.Services.AddScoped<ILandmarkService, LandmarkService>();
 builder.Services.AddScoped<IEventLayoutService, EventLayoutService>();
+builder.Services.AddScoped<IEventSectionService, EventSectionService>();
+builder.Services.AddScoped<IEventLandmarkService, EventLandmarkService>();
 builder.Services.AddScoped<ITicketTypeService, TicketTypeService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
-builder.Services.AddScoped<IOrganizerProfileService, OrganizerProfileService>();
+builder.Services.AddScoped<IEventManagerProfileService, EventManagerProfileService>();
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<ICoreEmailService, CoreEmailService>();
 builder.Services.AddScoped<IEventSlotService, EventSlotService>();
 builder.Services.AddScoped<ISectionTicketTypeService, SectionTicketTypeService>();
+builder.Services.AddScoped<IEventSeatService, EventSeatService>();
 
 // 3a-redis. Redis Cache
 var redisConnectionString = builder.Configuration.GetValue<string>("Redis:ConnectionString") ?? "localhost:6379";
@@ -117,7 +123,7 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("StadiumOwner", policy => policy.RequireRole("StadiumOwner"));
     options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
-    options.AddPolicy("Organizer", policy => policy.RequireRole("Organizer"));
+    options.AddPolicy("EventManager", policy => policy.RequireRole("EventManager"));
 });
 
 // 3d. Controllers

@@ -170,7 +170,7 @@ namespace ArenaOps.AuthService.Infrastructure.Migrations
                         new
                         {
                             RoleId = 3,
-                            Name = "Organizer"
+                            Name = "EventManager"
                         },
                         new
                         {
