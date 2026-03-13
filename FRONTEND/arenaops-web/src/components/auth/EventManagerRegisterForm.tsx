@@ -1,13 +1,25 @@
 "use client";
 
 import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/store/store";
+import { registerUser } from "@/store/authSlice";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 // import EventManagerNavbar from "@/components/navfooter/EventManagerNavbar";
 // import EventManagerFooter from "@/components/navfooter/EventManagerFooter";
 import { Ticket, ShieldCheck, Mail, Phone, Building2, FileText, BadgeInfo, Globe, Lock, Eye, EyeOff, ArrowRight, User } from "lucide-react";
 
 export default function EventManagerRegisterForm() {
+    const dispatch = useDispatch<AppDispatch>();
+    const router = useRouter();
+    const { loading, error } = useSelector(
+        (state: RootState) => state.auth
+    );
+
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const [showPassword, setShowPassword] = useState(false);
+    
     const [form, setForm] = useState({
         fullName: "",
         email: "",
@@ -21,6 +33,38 @@ export default function EventManagerRegisterForm() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm({ ...form, [e.target.id]: e.target.value });
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const errors: Record<string, string> = {};
+
+        if (!form.fullName) errors.fullName = "Full name is required";
+        if (!form.email) errors.email = "Email address is required";
+        if (!form.password || form.password.length < 6)
+            errors.password = "Password must be at least 6 characters";
+
+        if (Object.keys(errors).length > 0) {
+            setFormErrors(errors);
+            return;
+        }
+        setFormErrors({});
+
+        const result = await dispatch(
+            registerUser({ email: form.email, password: form.password, fullName: form.fullName, role: "EventManager" })
+        );
+
+        if (registerUser.fulfilled.match(result)) {
+            localStorage.setItem(
+                "organizerProfile",
+                JSON.stringify({
+                    organizationName: form.organizationName,
+                    phone: form.phoneNumber,
+                    registeredAsOrganizer: true,
+                })
+            );
+            router.push("/manager");
+        }
     };
 
     return (
@@ -80,7 +124,7 @@ export default function EventManagerRegisterForm() {
                                 <h3 className="text-3xl font-bold mb-2 text-slate-100">Create Account</h3>
                                 <p className="text-slate-400">Start managing your venue today.</p>
                             </div>
-                            <form className="space-y-5 relative">
+                            <form onSubmit={handleSubmit} className="space-y-5 relative">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="space-y-2">
                                         <label htmlFor="fullName" className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Full Name</label>
