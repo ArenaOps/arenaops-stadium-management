@@ -251,15 +251,7 @@ public class AuthController : ControllerBase
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
         var ua = Request.Headers.UserAgent.ToString();
 
-        var registerRequest = new RegisterRequest
-        {
-            Email = request.Email,
-            Password = request.Password,
-            FullName = request.FullName,
-            Role = "EventManager"
-        };
-
-        var result = await _authService.RegisterAsync(registerRequest, ip, ua);
+        var result = await _authService.RegisterEventManagerAsync(request, ip, ua);
         SetAuthCookies(result);
         return Ok(ApiResponse<AuthResponse>.Ok(result, "EventManager registration successful"));
     }
