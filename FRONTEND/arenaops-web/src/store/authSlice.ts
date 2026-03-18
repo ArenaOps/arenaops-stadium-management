@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { authService, LoginPayload, RegisterPayload, UserData, ResetPasswordPayload } from "@/services/authService";
+import { authService, LoginPayload, RegisterPayload, RegisterEventManagerPayload, UserData, ResetPasswordPayload } from "@/services/authService";
+// Tokens are in HttpOnly cookies — only user profile is stored in localStorage
 
 interface AuthState {
     loading: boolean;
@@ -39,8 +40,7 @@ export const loginUser = createAsyncThunk(
         try {
             const response = await authService.login(payload);
             if (response.success) {
-                localStorage.setItem("accessToken", response.data.accessToken);
-                localStorage.setItem("refreshToken", response.data.refreshToken);
+                // Tokens are in HttpOnly cookies — only persist user profile for UI
                 localStorage.setItem("user", JSON.stringify(response.data));
                 return response.data;
             } else {
@@ -58,8 +58,7 @@ export const registerUser = createAsyncThunk(
         try {
             const response = await authService.register(payload);
             if (response.success) {
-                localStorage.setItem("accessToken", response.data.accessToken);
-                localStorage.setItem("refreshToken", response.data.refreshToken);
+                // Tokens are in HttpOnly cookies — only persist user profile for UI
                 localStorage.setItem("user", JSON.stringify(response.data));
                 return response.data;
             } else {
@@ -71,19 +70,33 @@ export const registerUser = createAsyncThunk(
     }
 );
 
+export const registerEventManagerUser = createAsyncThunk(
+    "auth/registerEventManager",
+    async (payload: RegisterEventManagerPayload, { rejectWithValue }) => {
+        try {
+            const response = await authService.registerEventManager(payload);
+            if (response.success) {
+                // Tokens are in HttpOnly cookies — only persist user profile for UI
+                localStorage.setItem("user", JSON.stringify(response.data));
+                return response.data;
+            } else {
+                return rejectWithValue(response.message || "Event Manager Registration failed");
+            }
+        } catch (err: any) {
+            return rejectWithValue(err.response?.data?.message || err.message || "Event Manager Registration failed");
+        }
+    }
+);
+
 export const logoutUser = createAsyncThunk(
     "auth/logout",
     async () => {
         try {
-            const refreshToken = localStorage.getItem("refreshToken");
-            if (refreshToken) {
-                await authService.logout(refreshToken);
-            }
-        } catch {
-            // Ignore logout errors
+            // Cookie is sent automatically — backend blacklists the token and clears cookies
+            await authService.logout();
+        } catch (err) {
+            // Ignore logout errors — still clear local session
         } finally {
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
             localStorage.removeItem("user");
         }
     }
@@ -95,8 +108,7 @@ export const googleLoginUser = createAsyncThunk(
         try {
             const response = await authService.googleLogin(code, redirectUri);
             if (response.success) {
-                localStorage.setItem("accessToken", response.data.accessToken);
-                localStorage.setItem("refreshToken", response.data.refreshToken);
+                // Tokens are in HttpOnly cookies — only persist user profile for UI
                 localStorage.setItem("user", JSON.stringify(response.data));
                 return response.data;
             } else {
@@ -191,6 +203,22 @@ const authSlice = createSlice({
             state.error = null;
         });
         builder.addCase(registerUser.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.payload as string;
+        });
+
+        // Register Event Manager
+        builder.addCase(registerEventManagerUser.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(registerEventManagerUser.fulfilled, (state, action) => {
+            state.loading = false;
+            state.user = action.payload;
+            state.isAuthenticated = true;
+            state.error = null;
+        });
+        builder.addCase(registerEventManagerUser.rejected, (state, action) => {
             state.loading = false;
             state.error = action.payload as string;
         });

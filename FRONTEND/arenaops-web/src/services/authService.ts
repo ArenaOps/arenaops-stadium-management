@@ -1,9 +1,7 @@
 import { api } from './axios';
 
-// Types based on the API documentation
+// UserData contains only identity/profile info — auth tokens are managed by HttpOnly cookies
 export interface UserData {
-    accessToken: string;
-    refreshToken: string;
     userId: string;
     roles: string[];
     isNewUser: boolean;
@@ -27,10 +25,18 @@ export interface RegisterPayload {
     email: string;
     password: string;
     fullName: string;
+    role?: string;
 }
 
-export interface RefreshPayload {
-    refreshToken: string;
+export interface RegisterEventManagerPayload {
+    email: string;
+    password: string;
+    fullName: string;
+    phoneNumber?: string;
+    organizationName?: string;
+    gstNumber?: string;
+    designation?: string;
+    website?: string;
 }
 
 export interface ResetPasswordPayload {
@@ -50,13 +56,21 @@ export const authService = {
         return response.data;
     },
 
-    refreshToken: async (payload: RefreshPayload): Promise<AuthResponse> => {
-        const response = await api.post<AuthResponse>('/api/auth/refresh', payload);
+    registerEventManager: async (payload: RegisterEventManagerPayload): Promise<AuthResponse> => {
+        // Points to the BFF proxy route, which forwards to /api/auth/event-managers/register
+        const response = await api.post<AuthResponse>('/api/auth/event-managers/register', payload);
         return response.data;
     },
 
-    logout: async (refreshToken: string): Promise<{ success: boolean; message: string }> => {
-        const response = await api.post('/api/auth/logout', { refreshToken });
+    // No body needed — refreshToken is sent automatically via HttpOnly cookie
+    refreshToken: async (): Promise<AuthResponse> => {
+        const response = await api.post<AuthResponse>('/api/auth/refresh', {});
+        return response.data;
+    },
+
+    // No body needed — both tokens are sent automatically via HttpOnly cookies
+    logout: async (): Promise<{ success: boolean; message: string }> => {
+        const response = await api.post('/api/auth/logout');
         return response.data;
     },
 
