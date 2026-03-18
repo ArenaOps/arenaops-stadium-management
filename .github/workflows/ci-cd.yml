@@ -15,6 +15,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set PowerShell Execution Policy
+        shell: pwsh
+        run: Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process -Force
+
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
         with:
