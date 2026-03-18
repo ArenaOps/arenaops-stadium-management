@@ -10,7 +10,8 @@ import type { Event } from "@/services/coreService"
 interface EventDiscoveryProps {
   events: Event[]
 }
-export function EventDiscovery({events}:EventDiscoveryProps) {
+export function EventDiscovery({ events: _events }: EventDiscoveryProps) {
+    void _events;
 
     return (
         <section className={styles.eventDiscoverySection}>

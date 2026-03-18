@@ -9,6 +9,23 @@ interface AuthState {
     isAuthenticated: boolean;
 }
 
+const getErrorMessage = (err: unknown, fallback: string): string => {
+    if (err && typeof err === "object") {
+        const maybeError = err as {
+            message?: unknown;
+            response?: { data?: { message?: unknown } };
+        };
+        if (typeof maybeError.response?.data?.message === "string") {
+            return maybeError.response.data.message;
+        }
+        if (typeof maybeError.message === "string") {
+            return maybeError.message;
+        }
+    }
+
+    return fallback;
+};
+
 const initialState: AuthState = {
     loading: false,
     error: null,
@@ -29,8 +46,8 @@ export const loginUser = createAsyncThunk(
             } else {
                 return rejectWithValue(response.message || "Login failed");
             }
-        } catch (err: any) {
-            return rejectWithValue(err.response?.data?.message || err.message || "Login failed");
+        } catch (err: unknown) {
+            return rejectWithValue(getErrorMessage(err, "Login failed"));
         }
     }
 );
@@ -47,8 +64,8 @@ export const registerUser = createAsyncThunk(
             } else {
                 return rejectWithValue(response.message || "Registration failed");
             }
-        } catch (err: any) {
-            return rejectWithValue(err.response?.data?.message || err.message || "Registration failed");
+        } catch (err: unknown) {
+            return rejectWithValue(getErrorMessage(err, "Registration failed"));
         }
     }
 );
@@ -73,7 +90,7 @@ export const registerEventManagerUser = createAsyncThunk(
 
 export const logoutUser = createAsyncThunk(
     "auth/logout",
-    async (_, { rejectWithValue }) => {
+    async () => {
         try {
             // Cookie is sent automatically — backend blacklists the token and clears cookies
             await authService.logout();
@@ -97,8 +114,8 @@ export const googleLoginUser = createAsyncThunk(
             } else {
                 return rejectWithValue(response.message || "Google login failed");
             }
-        } catch (err: any) {
-            return rejectWithValue(err.response?.data?.message || err.message || "Google login failed");
+        } catch (err: unknown) {
+            return rejectWithValue(getErrorMessage(err, "Google login failed"));
         }
     }
 );
@@ -109,8 +126,8 @@ export const forgotPassword = createAsyncThunk(
         try {
             const response = await authService.forgotPassword(email);
             return response;
-        } catch (err: any) {
-            return rejectWithValue(err.response?.data?.message || err.message || "Failed to send reset email");
+        } catch (err: unknown) {
+            return rejectWithValue(getErrorMessage(err, "Failed to send reset email"));
         }
     }
 );
@@ -121,8 +138,8 @@ export const resetPassword = createAsyncThunk(
         try {
             const response = await authService.resetPassword(payload);
             return response;
-        } catch (err: any) {
-            return rejectWithValue(err.response?.data?.message || err.message || "Password reset failed");
+        } catch (err: unknown) {
+            return rejectWithValue(getErrorMessage(err, "Password reset failed"));
         }
     }
 );
@@ -144,7 +161,7 @@ const authSlice = createSlice({
             state.loading = true;
             state.error = null;
         },
-        loginSuccess: (state, action: PayloadAction<any>) => {
+        loginSuccess: (state, action: PayloadAction<UserData>) => {
             state.loading = false;
             state.isAuthenticated = true;
             state.user = action.payload;
