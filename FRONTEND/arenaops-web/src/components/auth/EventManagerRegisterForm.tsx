@@ -72,7 +72,7 @@ export default function EventManagerRegisterForm() {
                     registeredAsOrganizer: true,
                 })
             );
-            router.push("/manager");
+            router.push("/event-manager/dashboard");
         }
     };
 
