@@ -19,11 +19,15 @@ export interface Stadium {
     city: string;
     state: string;
     country: string;
+    pincode: string;
     latitude: number;
     longitude: number;
+    imageUrl?: string;
+    imagePublicId?: string;
     capacity?: number;
     ownerId?: string;
     isApproved?: boolean;
+    isActive?: boolean;
     createdAt?: string;
 }
 
@@ -33,8 +37,11 @@ export interface CreateStadiumPayload {
     city: string;
     state: string;
     country: string;
+    pincode: string;
     latitude: number;
     longitude: number;
+    imageUrl?: string;
+    imagePublicId?: string;
 }
 
 // Seating Plan
@@ -189,6 +196,21 @@ export const coreService = {
 
     updateStadium: async (id: string, payload: Partial<CreateStadiumPayload>): Promise<ApiResponse<Stadium>> => {
         const response = await api.put(`/api/core/stadiums/${id}`, payload);
+        return response.data;
+    },
+
+    deleteStadium: async (id: string): Promise<ApiResponse<void>> => {
+        const response = await api.delete(`/api/core/stadiums/${id}`);
+        return response.data;
+    },
+
+    getStadiumsByOwner: async (ownerId: string): Promise<ApiResponse<Stadium[]>> => {
+        const response = await api.get(`/api/core/stadiums/owner/${ownerId}`);
+        return response.data;
+    },
+
+    getEventsByStadium: async (stadiumId: string): Promise<ApiResponse<Event[]>> => {
+        const response = await api.get(`/api/core/events/stadium/${stadiumId}`);
         return response.data;
     },
 

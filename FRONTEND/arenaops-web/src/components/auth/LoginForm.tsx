@@ -32,7 +32,9 @@ export default function LoginForm() {
   // Redirect if authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (user.roles?.includes("EventManager")) {
+      if (user.roles?.includes("StadiumOwner")) {
+        router.push("/manager");
+      } else if (user.roles?.includes("EventManager")) {
         router.push("/event-manager/dashboard");
       } else {
         router.push("/");
@@ -103,10 +105,12 @@ export default function LoginForm() {
     if (loginUser.fulfilled.match(result)) {
       success("Welcome back to the Arena!");
       const userPayload = result.payload as any;
-      if (userPayload?.roles?.includes("EventManager")) {
-         router.push("/event-manager/dashboard");
+      if (userPayload?.roles?.includes("StadiumOwner")) {
+        router.push("/manager");
+      } else if (userPayload?.roles?.includes("EventManager")) {
+        router.push("/event-manager/dashboard");
       } else {
-         router.push("/");
+        router.push("/");
       }
     } else {
       if (result.payload) {

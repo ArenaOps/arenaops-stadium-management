@@ -12,6 +12,8 @@ public class Stadium
     public string Pincode { get; set; } = string.Empty;
     public decimal Latitude { get; set; }
     public decimal Longitude { get; set; }
+    public string ImageUrl { get; set; } = string.Empty;
+    public string ImagePublicId { get; set; } = string.Empty;
     public bool IsApproved { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public bool IsActive { get; set; } = true;

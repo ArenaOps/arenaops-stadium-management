@@ -35,6 +35,13 @@ async function handleProxy(request: NextRequest, slug: string[]) {
             headers[key] = value;
         }
     });
+
+    // Check if accessToken exists in cookies and add Authorization header
+    const token = request.cookies.get('accessToken')?.value;
+    if (token && !headers['authorization']) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
     headers['host'] = new URL(AUTH_SERVICE_URL).host;
 
     try {
