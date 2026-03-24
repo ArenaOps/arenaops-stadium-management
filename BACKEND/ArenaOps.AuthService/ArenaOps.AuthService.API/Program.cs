@@ -73,6 +73,9 @@ builder.Services.AddSingleton<ITokenService, TokenService>();
 // Auth Service
 builder.Services.AddScoped<IAuthService, ArenaOps.AuthService.Infrastructure.Services.AuthService>();
 
+// User Management Service
+builder.Services.AddScoped<IUserManagementService, UserManagementService>();
+
 // Dapper Context
 builder.Services.AddSingleton<ArenaOps.AuthService.Core.Interfaces.IDapperContext, ArenaOps.AuthService.Infrastructure.Data.DapperContext>();
 
