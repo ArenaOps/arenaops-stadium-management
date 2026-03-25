@@ -40,7 +40,6 @@ export default function CreateStadiumPage() {
         city: "",
         state: "",
         country: "",
-        pincode: "",
         latitude: 0,
         longitude: 0,
     });
@@ -94,10 +93,6 @@ export default function CreateStadiumPage() {
             showNotification("error", "Country is required");
             return;
         }
-        if (!formData.pincode.trim()) {
-            showNotification("error", "Pincode is required");
-            return;
-        }
 
         setSaving(true);
         try {
@@ -105,23 +100,12 @@ export default function CreateStadiumPage() {
             const response = await coreService.createStadium(formData);
 
             if (response.success && response.data) {
-                const stadiumId = response.data.stadiumId;
-
-                // If image selected, upload it and update stadium
+                // If image selected, upload it
                 if (selectedFile) {
-                    const uploadResponse = await uploadService.uploadStadiumImage(
+                    await uploadService.uploadStadiumImage(
                         selectedFile,
-                        stadiumId
+                        response.data.stadiumId
                     );
-
-                    if (uploadResponse.success && uploadResponse.data) {
-                        // Update stadium with image URL
-                        await coreService.updateStadium(stadiumId, {
-                            ...formData,
-                            imageUrl: uploadResponse.data.url,
-                            imagePublicId: uploadResponse.data.publicId,
-                        });
-                    }
                 }
 
                 showNotification("success", "Stadium created successfully");
@@ -283,19 +267,6 @@ export default function CreateStadiumPage() {
                                     value={formData.country}
                                     onChange={handleInputChange}
                                     placeholder="Country"
-                                    className={styles.input}
-                                    required
-                                />
-                            </div>
-
-                            <div className={styles.formGroup}>
-                                <label className={styles.label}>Pincode *</label>
-                                <input
-                                    type="text"
-                                    name="pincode"
-                                    value={formData.pincode}
-                                    onChange={handleInputChange}
-                                    placeholder="Postal/Zip Code"
                                     className={styles.input}
                                     required
                                 />

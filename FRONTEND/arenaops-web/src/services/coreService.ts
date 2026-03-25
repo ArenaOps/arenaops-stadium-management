@@ -19,15 +19,11 @@ export interface Stadium {
     city: string;
     state: string;
     country: string;
-    pincode: string;
     latitude: number;
     longitude: number;
-    imageUrl?: string;
-    imagePublicId?: string;
     capacity?: number;
     ownerId?: string;
     isApproved?: boolean;
-    isActive?: boolean;
     createdAt?: string;
 }
 
@@ -37,11 +33,8 @@ export interface CreateStadiumPayload {
     city: string;
     state: string;
     country: string;
-    pincode: string;
     latitude: number;
     longitude: number;
-    imageUrl?: string;
-    imagePublicId?: string;
 }
 
 // Seating Plan
@@ -210,7 +203,7 @@ export const coreService = {
     },
 
     getEventsByStadium: async (stadiumId: string): Promise<ApiResponse<Event[]>> => {
-        const response = await api.get(`/api/core/events/stadium/${stadiumId}`);
+        const response = await api.get(`/api/core/stadiums/${stadiumId}/events`);
         return response.data;
     },
 

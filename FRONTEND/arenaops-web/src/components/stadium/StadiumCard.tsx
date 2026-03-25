@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import { MapPin, Users, Calendar, CheckCircle, Clock, Building2 } from "lucide-react";
+import { MapPin, Users, Calendar, CheckCircle, Clock } from "lucide-react";
 import type { Stadium } from "@/services/coreService";
 import styles from "./StadiumCard.module.scss";
 import { cn } from "@/lib/utils";
@@ -16,23 +15,6 @@ export function StadiumCard({ stadium, eventCount = 0 }: StadiumCardProps) {
     return (
         <Link href={`/manager/stadiums/${stadium.stadiumId}`} className={styles.cardLink}>
             <article className={styles.card}>
-                {/* Stadium Image */}
-                <div className={styles.imageContainer}>
-                    {stadium.imageUrl ? (
-                        <Image
-                            src={stadium.imageUrl}
-                            alt={stadium.name}
-                            fill
-                            sizes="(max-width: 768px) 100vw, 400px"
-                            className={styles.image}
-                        />
-                    ) : (
-                        <div className={styles.imagePlaceholder}>
-                            <Building2 size={32} />
-                        </div>
-                    )}
-                </div>
-
                 {/* Status Badge */}
                 <div className={styles.statusContainer}>
                     <span

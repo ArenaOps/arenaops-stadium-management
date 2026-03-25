@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
     ArrowLeft,
@@ -66,21 +66,21 @@ export default function StadiumDetailPage() {
         city: "",
         state: "",
         country: "",
-        pincode: "",
         latitude: 0,
         longitude: 0,
     });
 
-    const showNotification = useCallback((type: "success" | "error", message: string) => {
-        setNotification({ type, message });
-        setTimeout(() => setNotification(null), 4000);
-    }, []);
+    useEffect(() => {
+        if (stadiumId) {
+            fetchStadiumData();
+        }
+    }, [stadiumId]);
 
-    const fetchStadiumData = useCallback(async () => {
+    const fetchStadiumData = async () => {
         try {
             const [stadiumRes, eventsRes] = await Promise.all([
                 coreService.getStadium(stadiumId),
-                coreService.getEventsByStadium(stadiumId).catch(() => ({ success: false, data: [] as Event[] })),
+                coreService.getEventsByStadium(stadiumId).catch(() => ({ success: false, data: [] })),
             ]);
 
             if (stadiumRes.success && stadiumRes.data) {
@@ -92,7 +92,6 @@ export default function StadiumDetailPage() {
                     city: s.city || "",
                     state: s.state || "",
                     country: s.country || "",
-                    pincode: s.pincode || "",
                     latitude: s.latitude || 0,
                     longitude: s.longitude || 0,
                 });
@@ -106,13 +105,12 @@ export default function StadiumDetailPage() {
         } finally {
             setLoading(false);
         }
-    }, [stadiumId, showNotification]);
+    };
 
-    useEffect(() => {
-        if (stadiumId) {
-            fetchStadiumData();
-        }
-    }, [stadiumId, fetchStadiumData]);
+    const showNotification = (type: "success" | "error", message: string) => {
+        setNotification({ type, message });
+        setTimeout(() => setNotification(null), 4000);
+    };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type } = e.target;
@@ -240,7 +238,7 @@ export default function StadiumDetailPage() {
                     <DialogHeader>
                         <DialogTitle>Delete Stadium</DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to delete &quot;{stadium.name}&quot;? This action cannot
+                            Are you sure you want to delete "{stadium.name}"? This action cannot
                             be undone and will remove all associated data.
                         </DialogDescription>
                     </DialogHeader>
@@ -412,18 +410,6 @@ export default function StadiumDetailPage() {
                                         required
                                     />
                                 </div>
-
-                                <div className={styles.formGroup}>
-                                    <label className={styles.label}>Pincode *</label>
-                                    <input
-                                        type="text"
-                                        name="pincode"
-                                        value={formData.pincode}
-                                        onChange={handleInputChange}
-                                        className={styles.input}
-                                        required
-                                    />
-                                </div>
                             </div>
                         </div>
 
@@ -471,16 +457,6 @@ export default function StadiumDetailPage() {
                                 <Trash2 size={18} />
                                 Delete Stadium
                             </button>
-                            <Link href={`/manager/stadiumLayout?stadiumId=${stadiumId}`}>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="bg-[#10b981]/10 text-[#10b981] hover:bg-[#10b981]/20 border border-[#10b981]/20 h-12 px-6 rounded-xl font-medium tracking-wide flex items-center gap-2 transition-all w-full md:w-auto"
-                                >
-                                    <Globe size={18} /> {/* Using existing Globe icon since LayoutTemplate isn't imported from lucide-react yet */}
-                                    Stadium Generator
-                                </Button>
-                            </Link>
                             <button
                                 type="submit"
                                 disabled={saving}
