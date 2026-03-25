@@ -2,33 +2,62 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { LayoutDashboard, Map, Menu, X } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useDispatch } from "react-redux";
+import { LayoutDashboard, Menu, X, PlusCircle, User, LogOut } from "lucide-react";
+import { AppDispatch } from "@/store/store";
+import { logoutUser } from "@/store/authSlice";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 const menu = [
   {
-    name: "Stadium Dashboard",
+    name: "Dashboard",
     href: "/manager",
     icon: LayoutDashboard,
   },
   {
-    name: "Stadium Generator",
-    href: "/manager/stadiumLayout",
-    icon: Map,
+    name: "Create Stadium",
+    href: "/manager/stadiums/create",
+    icon: PlusCircle,
+  },
+  {
+    name: "Profile",
+    href: "/manager/profile",
+    icon: User,
   },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
   const [open, setOpen] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
+
+  const handleLogout = () => {
+    dispatch(logoutUser());
+    router.push("/");
+    setLogoutOpen(false);
+    setOpen(false);
+  };
 
   return (
     <>
       {/* Mobile Topbar */}
-      <div className="lg:hidden flex items-center justify-between p-4 bg-black text-white">
-        <div className="font-semibold">ARENAOPS</div>
+      <div className="lg:hidden flex items-center justify-between p-4 bg-black text-white border-b border-white/10 shrink-0">
+        <div className="font-semibold text-emerald-400">ARENAOPS</div>
 
-        <button onClick={() => setOpen(true)}>
+        <button onClick={() => setOpen(true)} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
           <Menu size={22} />
         </button>
       </div>
@@ -37,7 +66,7 @@ export default function Sidebar() {
       {open && (
         <div
           onClick={() => setOpen(false)}
-          className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
         />
       )}
 
@@ -46,10 +75,10 @@ export default function Sidebar() {
         className={`
         fixed lg:static
         top-0 left-0 z-50
-        h-screen w-64
+        h-full w-64
         bg-[#10b981] text-gray-200
-        rounded-r-3xl shadow-xl
-        flex flex-col
+        lg:rounded-r-3xl shadow-xl
+        flex flex-col shrink-0
         transform transition-transform duration-300
         ${open ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0
@@ -69,10 +98,13 @@ export default function Sidebar() {
         </div>
 
         {/* Menu */}
-        <nav className="flex flex-col gap-2 pl-3">
+        <nav className="flex flex-col gap-2 pl-3 flex-1">
           {menu.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            // Dashboard is exact match, others check if path starts with href
+            const isActive = item.href === "/manager"
+              ? pathname === "/manager"
+              : pathname.startsWith(item.href);
 
             return (
               <Link
@@ -92,6 +124,41 @@ export default function Sidebar() {
             );
           })}
         </nav>
+
+        {/* Logout Button */}
+        <div className="p-4 border-t border-white/20">
+          <Dialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+            <DialogTrigger asChild>
+              <button
+                className="flex items-center gap-3 w-full py-3 px-4 text-sm font-medium text-gray-200 hover:text-white hover:bg-red-500/30 rounded-lg transition-all"
+              >
+                <LogOut size={18} />
+                Logout
+              </button>
+            </DialogTrigger>
+            <DialogContent className="bg-[#111827] border-white/10 text-white sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-white">Confirm Logout</DialogTitle>
+                <DialogDescription className="text-gray-400">
+                  Are you sure you want to logout? You will need to sign in again to access your account.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="bg-transparent border-t border-white/5 pt-4">
+                <DialogClose asChild>
+                  <Button variant="outline" className="border-white/10 text-gray-300 hover:bg-white/5 hover:text-white">
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button
+                  onClick={handleLogout}
+                  className="bg-red-500 hover:bg-red-600 text-white"
+                >
+                  Logout
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </aside>
     </>
   );

@@ -34,6 +34,8 @@ export default function LoginForm() {
     if (isAuthenticated && user) {
       if (user.roles?.includes("Admin")) {
         router.push("/admin/dashboard");
+      } else if (user.roles?.includes("StadiumOwner")) {
+        router.push("/manager");
       } else if (user.roles?.includes("EventManager")) {
         router.push("/event-manager/dashboard");
       } else {
@@ -106,11 +108,13 @@ export default function LoginForm() {
       success("Welcome back to the Arena!");
       const userPayload = result.payload as any;
       if (userPayload?.roles?.includes("Admin")) {
-         router.push("/admin/dashboard");
+        router.push("/admin/dashboard");
+      } else if (userPayload?.roles?.includes("StadiumOwner")) {
+        router.push("/manager");
       } else if (userPayload?.roles?.includes("EventManager")) {
-         router.push("/event-manager/dashboard");
+        router.push("/event-manager/dashboard");
       } else {
-         router.push("/");
+        router.push("/");
       }
     } else {
       if (result.payload) {

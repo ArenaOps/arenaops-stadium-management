@@ -54,6 +54,8 @@ public class StadiumService : IStadiumService
             Pincode = dto.Pincode,
             Latitude = dto.Latitude,
             Longitude = dto.Longitude,
+            ImageUrl = dto.ImageUrl ?? string.Empty,
+            ImagePublicId = dto.ImagePublicId ?? string.Empty,
             IsApproved = false,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
@@ -80,6 +82,15 @@ public class StadiumService : IStadiumService
         stadium.Latitude = dto.Latitude;
         stadium.Longitude = dto.Longitude;
         stadium.IsActive = dto.IsActive;
+
+        if (dto.ImageUrl != null)
+        {
+            stadium.ImageUrl = dto.ImageUrl;
+        }
+        if (dto.ImagePublicId != null)
+        {
+            stadium.ImagePublicId = dto.ImagePublicId;
+        }
 
         await _stadiumRepository.UpdateAsync(stadium);
         await _stadiumRepository.SaveChangesAsync();
@@ -113,6 +124,8 @@ public class StadiumService : IStadiumService
             Pincode = stadium.Pincode,
             Latitude = stadium.Latitude,
             Longitude = stadium.Longitude,
+            ImageUrl = stadium.ImageUrl,
+            ImagePublicId = stadium.ImagePublicId,
             IsApproved = stadium.IsApproved,
             CreatedAt = stadium.CreatedAt,
             IsActive = stadium.IsActive

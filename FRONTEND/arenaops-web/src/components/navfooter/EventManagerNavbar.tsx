@@ -1,7 +1,13 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, Menu, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function EventManagerNavbar() {
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-[#10b981]/10 bg-background-dark/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
@@ -18,13 +24,40 @@ export default function EventManagerNavbar() {
           <a className="text-sm font-medium text-slate-300 hover:text-[#10b981] transition-colors" href="#">Solutions</a>
           <a className="text-sm font-medium text-slate-300 hover:text-[#10b981] transition-colors" href="#">Pricing</a>
         </div>
-        <div className="flex items-center gap-4">
-          <Link href="/login" className="hidden text-sm font-bold text-slate-100 hover:text-[#10b981] sm:block">Login</Link>
+        <div className="hidden items-center gap-4 md:flex">
+          <Link href="/login" className="text-sm font-bold text-slate-100 hover:text-[#10b981]">Login</Link>
           <Link href="/register-event-manager" className="rounded-lg bg-[#10b981] px-5 py-2.5 text-sm font-bold text-background-dark hover:brightness-110 transition-all">
             Get Started
           </Link>
         </div>
+        <div className="md:hidden">
+            <button onClick={() => setIsMobileOpen(!isMobileOpen)} className="text-slate-300 hover:text-white">
+                {isMobileOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+        </div>
       </div>
+
+      <AnimatePresence>
+        {isMobileOpen && (
+          <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden border-t border-white/10 bg-[#0a0a0a]"
+          >
+              <div className="flex flex-col px-6 py-4 space-y-4">
+                  <a className="text-sm font-medium text-slate-300 hover:text-[#10b981]" href="#">Features</a>
+                  <a className="text-sm font-medium text-slate-300 hover:text-[#10b981]" href="#">Solutions</a>
+                  <a className="text-sm font-medium text-slate-300 hover:text-[#10b981]" href="#">Pricing</a>
+                  <hr className="border-white/10" />
+                  <Link href="/login" className="text-sm font-bold text-slate-100 hover:text-[#10b981]">Login</Link>
+                  <Link href="/register-event-manager" className="inline-block text-center rounded-lg bg-[#10b981] px-5 py-2.5 text-sm font-bold text-background-dark hover:brightness-110 transition-all">
+                     Get Started
+                  </Link>
+              </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }
