@@ -192,6 +192,21 @@ export const coreService = {
         return response.data;
     },
 
+    deleteStadium: async (id: string): Promise<ApiResponse<void>> => {
+        const response = await api.delete(`/api/core/stadiums/${id}`);
+        return response.data;
+    },
+
+    getStadiumsByOwner: async (ownerId: string): Promise<ApiResponse<Stadium[]>> => {
+        const response = await api.get(`/api/core/stadiums/owner/${ownerId}`);
+        return response.data;
+    },
+
+    getEventsByStadium: async (stadiumId: string): Promise<ApiResponse<Event[]>> => {
+        const response = await api.get(`/api/core/stadiums/${stadiumId}/events`);
+        return response.data;
+    },
+
     // ── Seating Plans ────────────────────────────────────
     getSeatingPlans: async (stadiumId: string): Promise<ApiResponse<SeatingPlan[]>> => {
         const response = await api.get(`/api/core/stadiums/${stadiumId}/seating-plans`);

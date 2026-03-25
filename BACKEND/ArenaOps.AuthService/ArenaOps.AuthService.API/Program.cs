@@ -181,6 +181,9 @@ try
         });
     });
 
+    // ---------------- HEALTH CHECKS ----------------
+    builder.Services.AddHealthChecks();
+
     // ---------------- APP ----------------
     var app = builder.Build();
 

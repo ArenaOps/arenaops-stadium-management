@@ -1,0 +1,322 @@
+@use "sass:color";
+
+// Emerald theme colors
+$primary-accent: #10b981;
+$primary-accent-light: #34d399;
+$primary-accent-dark: #059669;
+$dark-bg: #050505;
+$card-bg: rgba(17, 24, 39, 0.6);
+$border-color: rgba(255, 255, 255, 0.08);
+$text-primary: #f8fafc;
+$text-secondary: #94a3b8;
+$text-muted: #64748b;
+
+.page {
+    min-height: 100vh;
+    background: linear-gradient(180deg, $dark-bg 0%, #0a0a0a 100%);
+    padding: 1.5rem;
+
+    @media (min-width: 768px) {
+        padding: 2rem 3rem;
+    }
+}
+
+.container {
+    max-width: 48rem;
+    margin: 0 auto;
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+
+.toast {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    z-index: 100;
+    animation: slideIn 0.3s ease;
+}
+
+.toastSuccess {
+    background: rgba($primary-accent, 0.15);
+    border: 1px solid rgba($primary-accent, 0.3);
+    color: $primary-accent-light;
+}
+
+.toastError {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+// ─── Header ───────────────────────────────────────────────────────────────────
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.backButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.75rem;
+    background: $card-bg;
+    border: 1px solid $border-color;
+    color: $text-secondary;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: rgba($primary-accent, 0.1);
+        border-color: rgba($primary-accent, 0.3);
+        color: $primary-accent;
+    }
+}
+
+.title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $text-primary;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.subtitle {
+    font-size: 0.875rem;
+    color: $text-muted;
+    margin: 0.25rem 0 0;
+}
+
+// ─── Form ─────────────────────────────────────────────────────────────────────
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.section {
+    background: $card-bg;
+    backdrop-filter: blur(12px);
+    border: 1px solid $border-color;
+    border-radius: 1rem;
+    padding: 1.5rem;
+}
+
+.sectionTitle {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: $primary-accent;
+    margin: 0 0 1.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.formGrid {
+    display: grid;
+    gap: 1rem;
+
+    @media (min-width: 640px) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: $text-secondary;
+}
+
+.input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid $border-color;
+    border-radius: 0.625rem;
+    color: $text-primary;
+    font-size: 0.9375rem;
+    transition: all 0.2s ease;
+
+    &::placeholder {
+        color: $text-muted;
+    }
+
+    &:focus {
+        outline: none;
+        border-color: rgba($primary-accent, 0.5);
+        box-shadow: 0 0 0 3px rgba($primary-accent, 0.1);
+    }
+}
+
+// ─── Image Upload ─────────────────────────────────────────────────────────────
+
+.imageSection {
+    background: $card-bg;
+    backdrop-filter: blur(12px);
+    border: 1px solid $border-color;
+    border-radius: 1rem;
+    padding: 1.5rem;
+}
+
+.uploadZone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2.5rem;
+    border: 2px dashed rgba($primary-accent, 0.3);
+    border-radius: 0.75rem;
+    background: rgba($primary-accent, 0.05);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: $text-secondary;
+
+    &:hover {
+        border-color: rgba($primary-accent, 0.5);
+        background: rgba($primary-accent, 0.1);
+    }
+
+    svg {
+        color: $primary-accent;
+    }
+}
+
+.uploadHint {
+    font-size: 0.75rem;
+    color: $text-muted;
+}
+
+.imagePreview {
+    position: relative;
+    border-radius: 0.75rem;
+    overflow: hidden;
+
+    img {
+        width: 100%;
+        max-height: 200px;
+        object-fit: cover;
+    }
+}
+
+.removeImage {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.7);
+    border: none;
+    color: white;
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &:hover {
+        background: rgba(239, 68, 68, 0.8);
+    }
+}
+
+.hiddenInput {
+    display: none;
+}
+
+// ─── Actions ──────────────────────────────────────────────────────────────────
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding-top: 0.5rem;
+}
+
+.cancelButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: $text-secondary;
+    background: transparent;
+    border: 1px solid $border-color;
+    border-radius: 0.625rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: $text-primary;
+    }
+}
+
+.submitButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: white;
+    background: $primary-accent;
+    border: none;
+    border-radius: 0.625rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+        background: $primary-accent-dark;
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
