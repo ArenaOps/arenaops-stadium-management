@@ -94,7 +94,12 @@ export interface ResetPasswordPayload {
 
 export const authService = {
     login: async (payload: LoginPayload): Promise<AuthResponse> => {
+        console.log("[authService.login] request", {
+            url: "/api/auth/login",
+            payload: { email: payload.email, password: "[redacted]" },
+        });
         const response = await api.post<AuthResponse>('/api/auth/login', payload);
+        console.log("[authService.login] response", response.data);
         return response.data;
     },
 

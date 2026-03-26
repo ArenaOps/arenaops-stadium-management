@@ -7,6 +7,7 @@ interface AuthState {
     error: string | null;
     user: UserData | null;
     isAuthenticated: boolean;
+    rehydrated: boolean;
 }
 
 const getErrorMessage = (err: unknown, fallback: string): string => {
@@ -31,6 +32,7 @@ const initialState: AuthState = {
     error: null,
     user: null,
     isAuthenticated: false,
+    rehydrated: false,
 };
 
 // Async Thunks
@@ -156,6 +158,7 @@ const authSlice = createSlice({
                     state.isAuthenticated = true;
                 }
             }
+            state.rehydrated = true;
         },
         loginStart: (state) => {
             state.loading = true;
@@ -185,6 +188,7 @@ const authSlice = createSlice({
             state.user = action.payload;
             state.isAuthenticated = true;
             state.error = null;
+            state.rehydrated = true;
         });
         builder.addCase(loginUser.rejected, (state, action) => {
             state.loading = false;
@@ -201,6 +205,7 @@ const authSlice = createSlice({
             state.user = action.payload;
             state.isAuthenticated = true;
             state.error = null;
+            state.rehydrated = true;
         });
         builder.addCase(registerUser.rejected, (state, action) => {
             state.loading = false;
@@ -217,6 +222,7 @@ const authSlice = createSlice({
             state.user = action.payload;
             state.isAuthenticated = true;
             state.error = null;
+            state.rehydrated = true;
         });
         builder.addCase(registerEventManagerUser.rejected, (state, action) => {
             state.loading = false;
@@ -228,6 +234,7 @@ const authSlice = createSlice({
             state.user = null;
             state.isAuthenticated = false;
             state.error = null;
+            state.rehydrated = false;
         });
 
         // Google Login
@@ -240,6 +247,7 @@ const authSlice = createSlice({
             state.user = action.payload;
             state.isAuthenticated = true;
             state.error = null;
+            state.rehydrated = true;
         });
         builder.addCase(googleLoginUser.rejected, (state, action) => {
             state.loading = false;

@@ -101,8 +101,15 @@ export default function LoginForm() {
 
     setFormErrors({});
 
+    console.log("[LoginForm] submit", {
+      url: "/api/auth/login",
+      payload: { email, password: "[redacted]" },
+    });
+
     // Dispatch login action
     const result = await dispatch(loginUser({ email, password }));
+
+    console.log("[LoginForm] result", result);
 
     if (loginUser.fulfilled.match(result)) {
       success("Welcome back to the Arena!");
