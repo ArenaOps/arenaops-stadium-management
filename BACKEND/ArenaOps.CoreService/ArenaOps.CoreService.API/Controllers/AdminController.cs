@@ -112,6 +112,30 @@ public class AdminController : ControllerBase
     }
 
     #endregion
+
+    #region Event Management Endpoints
+
+    /// <summary>
+    /// Block an event
+    /// </summary>
+    [HttpPost("events/{id:guid}/block")]
+    public async Task<IActionResult> BlockEvent(Guid id, CancellationToken cancellationToken)
+    {
+        var response = await _adminService.BlockEventAsync(id, cancellationToken);
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Unblock an event
+    /// </summary>
+    [HttpPost("events/{id:guid}/unblock")]
+    public async Task<IActionResult> UnblockEvent(Guid id, CancellationToken cancellationToken)
+    {
+        var response = await _adminService.UnblockEventAsync(id, cancellationToken);
+        return Ok(response);
+    }
+
+    #endregion
 }
 
 /// <summary>

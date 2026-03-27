@@ -228,6 +228,52 @@ public class AdminService : IAdminService
 
     #endregion
 
+    #region Event Management
+
+    public async Task<ApiResponse<EventDto>> BlockEventAsync(Guid eventId, CancellationToken cancellationToken = default)
+    {
+        var eventEntity = await _eventRepository.GetByIdAsync(eventId);
+        if (eventEntity == null)
+            return ApiResponse<EventDto>.Fail("NOT_FOUND", "Event not found");
+
+        if (eventEntity.IsBlocked)
+            return ApiResponse<EventDto>.Fail("ALREADY_BLOCKED", "Event is already blocked");
+
+        eventEntity.IsBlocked = true;
+        eventEntity.UpdatedAt = DateTime.UtcNow;
+
+        await _eventRepository.UpdateAsync(eventEntity);
+        await _eventRepository.SaveChangesAsync();
+
+        // Log activity
+        await LogActivityAsync(ActivityTypes.EventBlocked, $"Event '{eventEntity.Name}' was blocked", eventEntity.EventId.ToString(), "Event");
+
+        return ApiResponse<EventDto>.Ok(MapEventToDto(eventEntity), "Event blocked successfully");
+    }
+
+    public async Task<ApiResponse<EventDto>> UnblockEventAsync(Guid eventId, CancellationToken cancellationToken = default)
+    {
+        var eventEntity = await _eventRepository.GetByIdAsync(eventId);
+        if (eventEntity == null)
+            return ApiResponse<EventDto>.Fail("NOT_FOUND", "Event not found");
+
+        if (!eventEntity.IsBlocked)
+            return ApiResponse<EventDto>.Fail("NOT_BLOCKED", "Event is not blocked");
+
+        eventEntity.IsBlocked = false;
+        eventEntity.UpdatedAt = DateTime.UtcNow;
+
+        await _eventRepository.UpdateAsync(eventEntity);
+        await _eventRepository.SaveChangesAsync();
+
+        // Log activity
+        await LogActivityAsync(ActivityTypes.EventUnblocked, $"Event '{eventEntity.Name}' was unblocked", eventEntity.EventId.ToString(), "Event");
+
+        return ApiResponse<EventDto>.Ok(MapEventToDto(eventEntity), "Event unblocked successfully");
+    }
+
+    #endregion
+
     #region Mappers
 
     private static StadiumDto MapToDto(Stadium stadium)
@@ -263,6 +309,24 @@ public class AdminService : IAdminService
             UserEmail = activity.UserEmail,
             Timestamp = activity.Timestamp,
             Metadata = activity.Metadata
+        };
+    }
+
+    private static EventDto MapEventToDto(Event eventEntity)
+    {
+        return new EventDto
+        {
+            EventId = eventEntity.EventId,
+            StadiumId = eventEntity.StadiumId,
+            StadiumName = eventEntity.Stadium?.Name ?? string.Empty,
+            EventManagerId = eventEntity.EventManagerId,
+            Name = eventEntity.Name,
+            Description = eventEntity.Description,
+            ImageUrl = eventEntity.ImageUrl,
+            Status = eventEntity.Status,
+            IsBlocked = eventEntity.IsBlocked,
+            CreatedAt = eventEntity.CreatedAt,
+            UpdatedAt = eventEntity.UpdatedAt
         };
     }
 

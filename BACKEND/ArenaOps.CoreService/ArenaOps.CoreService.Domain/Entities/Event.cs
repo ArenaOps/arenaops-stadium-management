@@ -9,6 +9,7 @@ public class Event
     public string? Description { get; set; }
     public string? ImageUrl { get; set; }
     public string Status { get; set; } = EventStatuses.Draft;
+    public bool IsBlocked { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 

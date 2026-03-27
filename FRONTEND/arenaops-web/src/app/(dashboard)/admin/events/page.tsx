@@ -7,6 +7,8 @@ import {
   useEvents,
   useUpdateEventStatus,
   useDeleteEvent,
+  useBlockEvent,
+  useUnblockEvent,
 } from "@/features/admin/hooks/useAdmin";
 import type { EventListItem, EventStatus } from "@/features/admin/types/admin.types";
 import {
@@ -22,6 +24,8 @@ import {
   XCircle,
   Clock,
   Play,
+  Shield,
+  ShieldOff,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -39,6 +43,8 @@ export default function EventsPage() {
   const events = useEvents(statusFilter || undefined);
   const updateEventStatus = useUpdateEventStatus();
   const deleteEvent = useDeleteEvent();
+  const blockEvent = useBlockEvent();
+  const unblockEvent = useUnblockEvent();
   const [selectedEvent, setSelectedEvent] = useState<EventListItem | null>(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [newStatus, setNewStatus] = useState<string>("");
@@ -73,6 +79,14 @@ export default function EventsPage() {
   const openDeleteModal = (event: EventListItem) => {
     setSelectedEvent(event);
     setShowDeleteModal(true);
+  };
+
+  const handleBlockToggle = async (event: EventListItem) => {
+    if (event.isBlocked) {
+      await unblockEvent.mutateAsync(event.eventId);
+    } else {
+      await blockEvent.mutateAsync(event.eventId);
+    }
   };
 
   const getStatusColor = (status: EventStatus) => {
@@ -216,7 +230,15 @@ export default function EventsPage() {
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <CardTitle className="text-base">{event.name}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-base">{event.name}</CardTitle>
+                      {event.isBlocked && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                          <ShieldOff className="w-3 h-3" />
+                          Blocked
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-slate-500 mt-1">
                       {formatDistanceToNow(new Date(event.createdAt), { addSuffix: true })}
                     </p>
@@ -249,25 +271,50 @@ export default function EventsPage() {
                   </div>
                 )}
 
-                <div className="flex gap-2 pt-2">
+                <div className="flex flex-col gap-2 pt-2">
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => openStatusModal(event)}
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      Status
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
+                      onClick={() => openDeleteModal(event)}
+                      disabled={deleteEvent.isPending}
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
                   <Button
                     size="sm"
                     variant="outline"
-                    className="flex-1"
-                    onClick={() => openStatusModal(event)}
+                    className={`w-full ${
+                      event.isBlocked
+                        ? "text-green-600 border-green-200 hover:bg-green-50"
+                        : "text-orange-600 border-orange-200 hover:bg-orange-50"
+                    }`}
+                    onClick={() => handleBlockToggle(event)}
+                    disabled={blockEvent.isPending || unblockEvent.isPending}
                   >
-                    <Edit className="w-4 h-4 mr-1" />
-                    Status
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
-                    onClick={() => openDeleteModal(event)}
-                    disabled={deleteEvent.isPending}
-                  >
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    Delete
+                    {event.isBlocked ? (
+                      <>
+                        <Shield className="w-4 h-4 mr-1" />
+                        Unblock Event
+                      </>
+                    ) : (
+                      <>
+                        <ShieldOff className="w-4 h-4 mr-1" />
+                        Block Event
+                      </>
+                    )}
                   </Button>
                 </div>
               </CardContent>

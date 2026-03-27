@@ -36,6 +36,8 @@ public static class ActivityTypes
     public const string EventCreated = "EventCreated";
     public const string EventPublished = "EventPublished";
     public const string EventCancelled = "EventCancelled";
+    public const string EventBlocked = "EventBlocked";
+    public const string EventUnblocked = "EventUnblocked";
 
     // Booking Activities
     public const string BookingCreated = "BookingCreated";

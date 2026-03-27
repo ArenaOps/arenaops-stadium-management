@@ -189,6 +189,7 @@ export interface EventListItem {
   description?: string;
   imageUrl?: string;
   status: EventStatus;
+  isBlocked: boolean;
   createdAt: string;
   updatedAt?: string;
 }

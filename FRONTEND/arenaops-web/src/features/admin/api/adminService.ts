@@ -278,4 +278,24 @@ export const eventManagementService = {
       throw new Error(response.data?.error?.message || "Failed to delete event");
     }
   },
+
+  async blockEvent(eventId: string): Promise<void> {
+    const response = await api.post<ApiEnvelope<unknown>>(
+      `/api/core/admin/events/${eventId}/block`
+    );
+
+    if (!response.data?.success) {
+      throw new Error(response.data?.error?.message || "Failed to block event");
+    }
+  },
+
+  async unblockEvent(eventId: string): Promise<void> {
+    const response = await api.post<ApiEnvelope<unknown>>(
+      `/api/core/admin/events/${eventId}/unblock`
+    );
+
+    if (!response.data?.success) {
+      throw new Error(response.data?.error?.message || "Failed to unblock event");
+    }
+  },
 };

@@ -18,4 +18,8 @@ public interface IAdminService
     // Activity Feed
     Task<ApiResponse<IEnumerable<AdminActivityDto>>> GetRecentActivitiesAsync(int count = 20, CancellationToken cancellationToken = default);
     Task<ApiResponse<PaginatedResult<AdminActivityDto>>> GetActivitiesAsync(ActivityFilterRequest filter, CancellationToken cancellationToken = default);
+
+    // Event Management
+    Task<ApiResponse<EventDto>> BlockEventAsync(Guid eventId, CancellationToken cancellationToken = default);
+    Task<ApiResponse<EventDto>> UnblockEventAsync(Guid eventId, CancellationToken cancellationToken = default);
 }
