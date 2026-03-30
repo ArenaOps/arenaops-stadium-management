@@ -1,3 +1,4 @@
+import { AxiosError, AxiosRequestConfig } from 'axios';
 import { api } from './axios';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -9,6 +10,79 @@ export interface ApiResponse<T> {
     message: string | null;
     error: { code: string; message: string; details?: unknown } | null;
     pagination?: { page: number; pageSize: number; totalCount: number };
+}
+
+export type CoreServiceError = {
+    status: number;
+    message: string;
+    code?: string | null;
+};
+
+type ApiErrorResponse = {
+    message?: string | null;
+    error?: { code?: string; message?: string };
+};
+
+type RefreshAwareAxiosError = AxiosError<ApiErrorResponse> & {
+    refreshFailed?: boolean;
+    refreshStatus?: number;
+};
+
+export function normalizeCoreServiceError(
+    error: unknown,
+    fallbackMessage = 'Request failed'
+): CoreServiceError {
+    if (
+        typeof error === 'object' &&
+        error !== null &&
+        'status' in error &&
+        'message' in error
+    ) {
+        const normalized = error as { status?: unknown; message?: unknown; code?: unknown };
+        return {
+            status: typeof normalized.status === 'number' ? normalized.status : 0,
+            message: typeof normalized.message === 'string' ? normalized.message : fallbackMessage,
+            code: typeof normalized.code === 'string' ? normalized.code : null,
+        };
+    }
+
+    if (error instanceof AxiosError || (typeof error === 'object' && error !== null && 'isAxiosError' in error)) {
+        const axiosError = error as RefreshAwareAxiosError;
+        if (!axiosError.response) {
+            return {
+                status: 0,
+                message: 'Network error',
+                code: null,
+            };
+        }
+
+        const status = axiosError.response.status ?? 0;
+        const message =
+            axiosError.response?.data?.message ||
+            axiosError.message ||
+            fallbackMessage;
+        const code = axiosError.response?.data?.error?.code ?? undefined;
+
+        return {
+            status,
+            message,
+            code,
+        };
+    }
+
+    if (error instanceof Error) {
+        return {
+            status: 0,
+            message: error.message || fallbackMessage,
+            code: null,
+        };
+    }
+
+    return {
+        status: 0,
+        message: fallbackMessage,
+        code: null,
+    };
 }
 
 // Stadium
@@ -231,9 +305,10 @@ export const coreService = {
         try {
             const response = await api.get(`/api/core/events${params}`);
             return response.data;
-        } catch (error: any) {
+        } catch (error: unknown) {
     if (process.env.NODE_ENV === 'development') {
-        console.warn('getEvents failed:', error?.response?.status);
+        const status = error instanceof AxiosError ? error.response?.status : undefined;
+        console.warn('getEvents failed:', status);
     }
 
     return {
@@ -244,9 +319,13 @@ export const coreService = {
 }
     },
 
-    getEvent: async (id: string): Promise<ApiResponse<Event>> => {
-        const response = await api.get(`/api/core/events/${id}`);
-        return response.data;
+    getEvent: async (id: string, config?: AxiosRequestConfig): Promise<ApiResponse<Event>> => {
+        try {
+            const response = await api.get(`/api/core/events/${id}`, config);
+            return response.data;
+        } catch (error) {
+            throw normalizeCoreServiceError(error, 'Unable to load event details');
+        }
     },
 
     createEvent: async (payload: CreateEventPayload): Promise<ApiResponse<Event>> => {
@@ -260,8 +339,8 @@ export const coreService = {
     },
 
     // ── Event Slots ──────────────────────────────────────
-    getEventSlots: async (eventId: string): Promise<ApiResponse<EventSlot[]>> => {
-        const response = await api.get(`/api/core/events/${eventId}/slots`);
+    getEventSlots: async (eventId: string, config?: AxiosRequestConfig): Promise<ApiResponse<EventSlot[]>> => {
+        const response = await api.get(`/api/core/events/${eventId}/slots`, config);
         return response.data;
     },
 
