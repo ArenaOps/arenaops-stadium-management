@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToastActions } from "@/components/ui/toast";
-import { ArrowLeft, Calendar, MapPin, Clock, Plus, Pencil } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Plus, Pencil } from "lucide-react";
 import { coreService, Event, EventSlot } from "@/services/coreService";
 import EventStatusBadge from "@/components/event-manager/EventStatusBadge";
 import ConfirmDialog from "@/components/event-manager/ConfirmDialog";
@@ -42,9 +42,9 @@ export default function EventDetailPage() {
 
   useEffect(() => {
     fetchEventData();
-  }, [eventId]);
+  }, [eventId, fetchEventData]);
 
-  const fetchEventData = async () => {
+  const fetchEventData = useCallback(async () => {
     try {
       const [eventRes, slotsRes] = await Promise.all([
         coreService.getEvent(eventId),
@@ -69,7 +69,7 @@ export default function EventDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [eventId, showError, router]);
 
   const handleStatusChange = async (newStatus: string) => {
     setActionLoading(true);

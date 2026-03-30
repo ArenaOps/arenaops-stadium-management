@@ -46,7 +46,7 @@ export default function EventEditPage() {
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
                     <h2 className="text-2xl font-bold text-white mb-2">Event Not Found</h2>
-                    <p className="text-gray-400">The event you're looking for doesn't exist.</p>
+                    <p className="text-gray-400">The event you&apos;re looking for doesn&apos;t exist.</p>
                 </div>
             </div>
         );

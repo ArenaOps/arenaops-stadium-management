@@ -47,7 +47,7 @@ export default function EventCreatePage() {
                     <li className="flex gap-2">
                         <span className="text-[#10b981] font-bold">2.</span>
                         <span>
-                            You'll receive an email notification once they review your request
+                            You&apos;ll receive an email notification once they review your request
                         </span>
                     </li>
                     <li className="flex gap-2">

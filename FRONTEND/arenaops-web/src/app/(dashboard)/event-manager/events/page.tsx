@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchMyEvents, selectEvents, selectEventsLoading, selectEventsError } from "@/store/eventsSlice";
-import { RootState } from "@/store/store";
-import { useSelector } from "react-redux";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +22,6 @@ import { Event } from "@/services/coreService";
 export default function EventsPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { user } = useSelector((state: RootState) => state.auth);
 
   const events = useAppSelector(selectEvents);
   const loading = useAppSelector(selectEventsLoading);
@@ -113,7 +110,7 @@ export default function EventsPage() {
               </SelectContent>
             </Select>
 
-            <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+            <Select value={sortBy} onValueChange={(value: "recent" | "name") => setSortBy(value)}>
               <SelectTrigger className="bg-white/5 border-white/10 text-white">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
