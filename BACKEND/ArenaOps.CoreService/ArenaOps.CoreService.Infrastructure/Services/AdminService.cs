@@ -13,17 +13,20 @@ public class AdminService : IAdminService
     private readonly IEventRepository _eventRepository;
     private readonly IAdminActivityRepository _activityRepository;
     private readonly HealthCheckService _healthCheckService;
+    private readonly IAuthServiceClient _authServiceClient;
 
     public AdminService(
         IStadiumRepository stadiumRepository,
         IEventRepository eventRepository,
         IAdminActivityRepository activityRepository,
-        HealthCheckService healthCheckService)
+        HealthCheckService healthCheckService,
+        IAuthServiceClient authServiceClient)
     {
         _stadiumRepository = stadiumRepository;
         _eventRepository = eventRepository;
         _activityRepository = activityRepository;
         _healthCheckService = healthCheckService;
+        _authServiceClient = authServiceClient;
     }
 
     #region Stadium Approval
@@ -81,6 +84,9 @@ public class AdminService : IAdminService
         var allStadiums = await _stadiumRepository.GetAllAsync();
         var allEvents = await _eventRepository.GetAllAsync();
         var systemHealth = await GetSystemHealthInternalAsync(cancellationToken);
+        
+        // Fetch real user stats from AuthService
+        var userStats = await _authServiceClient.GetUserStatsAsync(cancellationToken);
 
         var stadiumList = allStadiums.ToList();
         var eventList = allEvents.ToList();
@@ -97,13 +103,13 @@ public class AdminService : IAdminService
             ActiveEvents = eventList.Count(e => e.Status == EventStatuses.Live),
             UpcomingEvents = eventList.Count(e => e.Status == EventStatuses.Approved || e.Status == EventStatuses.Draft),
 
-            // User metrics - placeholder values (would need to call Auth Service)
-            TotalUsers = 0,
-            ActiveUsers = 0,
-            NewUsersToday = 0,
-            NewUsersThisWeek = 0,
-            NewUsersThisMonth = 0,
-            UsersByRole = new UsersByRoleDto(),
+            // User metrics fetched from Auth Service
+            TotalUsers = userStats.TotalUsers,
+            ActiveUsers = userStats.ActiveUsers,
+            NewUsersToday = userStats.NewUsersToday,
+            NewUsersThisWeek = userStats.NewUsersThisWeek,
+            NewUsersThisMonth = userStats.NewUsersThisMonth,
+            UsersByRole = userStats.UsersByRole,
 
             // Booking metrics - placeholder values (Booking entity not yet implemented)
             TotalBookings = 0,

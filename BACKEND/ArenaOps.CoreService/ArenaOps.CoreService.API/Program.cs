@@ -64,6 +64,13 @@ builder.Services.AddScoped<IEventSlotService, EventSlotService>();
 builder.Services.AddScoped<ISectionTicketTypeService, SectionTicketTypeService>();
 builder.Services.AddScoped<IEventSeatService, EventSeatService>();
 
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient<IAuthServiceClient, AuthServiceClient>(client =>
+{
+    var authUrl = builder.Configuration.GetValue<string>("AuthServiceUrl") ?? "http://localhost:5242";
+    client.BaseAddress = new Uri(authUrl);
+});
+
 // 3a-redis. Redis Cache
 var redisConnectionString = builder.Configuration.GetValue<string>("Redis:ConnectionString") ?? "localhost:6379";
 var redisInstanceName = builder.Configuration.GetValue<string>("Redis:InstanceName") ?? "ArenaOps_";
