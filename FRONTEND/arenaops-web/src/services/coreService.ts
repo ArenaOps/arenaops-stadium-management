@@ -24,6 +24,8 @@ export interface Stadium {
     capacity?: number;
     ownerId?: string;
     isApproved?: boolean;
+    imageUrl?: string;
+    imagePublicId?: string;
     createdAt?: string;
 }
 
@@ -65,30 +67,24 @@ export interface Event {
     description?: string;
     stadiumId: string;
     stadiumName?: string;
-    organizerId?: string;
-    status: 'Draft' | 'Live' | 'Completed' | 'Cancelled';
-    startDate?: string;
-    endDate?: string;
-    eventType?: string;
+    eventManagerId: string;
+    status: 'Draft' | 'PendingApproval' | 'Approved' | 'Live' | 'Completed' | 'Cancelled';
     imageUrl?: string;
     createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface CreateEventPayload {
     name: string;
     description?: string;
     stadiumId: string;
-    startDate: string;
-    endDate: string;
-    eventType?: string;
+    imageUrl?: string;
 }
 
 export interface UpdateEventPayload {
     name?: string;
     description?: string;
-    startDate?: string;
-    endDate?: string;
-    eventType?: string;
+    imageUrl?: string;
 }
 
 // Event Slot
@@ -237,6 +233,21 @@ export const coreService = {
 
     updateEvent: async (id: string, payload: UpdateEventPayload): Promise<ApiResponse<Event>> => {
         const response = await api.put(`/api/core/events/${id}`, payload);
+        return response.data;
+    },
+
+    getMyEvents: async (): Promise<ApiResponse<Event[]>> => {
+        const response = await api.get('/api/core/events/my');
+        return response.data;
+    },
+
+    updateEventStatus: async (id: string, payload: { status: string }): Promise<ApiResponse<Event>> => {
+        const response = await api.patch(`/api/core/events/${id}/status`, payload);
+        return response.data;
+    },
+
+    approveEvent: async (id: string, payload: { isApproved: boolean; reason?: string }): Promise<ApiResponse<Event>> => {
+        const response = await api.patch(`/api/core/events/${id}/stadium-approval`, payload);
         return response.data;
     },
 
