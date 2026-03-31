@@ -7,6 +7,7 @@ import { useBooking } from "@/features/bookings/useBooking";
 type SeatGridRendererProps = {
   section: SectionTemplate;
   seats: SeatTemplate[];
+  onProceed: () => void;
 };
 
 type RenderSeat = {
@@ -337,7 +338,7 @@ const SeatNode = React.memo(
 SeatNode.displayName = "SeatNode";
 
 export const SeatGridRenderer = React.memo(
-  ({ section, seats }: SeatGridRendererProps) => {
+  ({ section, seats, onProceed }: SeatGridRendererProps) => {
     const { state, toggleSeat, resetSection, canProceed } = useBooking();
 
     const sectionSeats = useMemo(
@@ -554,6 +555,7 @@ export const SeatGridRenderer = React.memo(
             <button
               type="button"
               disabled={!canProceed}
+              onClick={onProceed}
               className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-45"
             >
               Proceed

@@ -10,9 +10,20 @@ import { ToastProvider, ToastContainer, ErrorBoundary } from "@/components/ui";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 function AuthInitializer({ children }: { children: React.ReactNode }) {
+  const [ready, setReady] = useState(false);
+
   useEffect(() => {
     store.dispatch(initializeAuth());
+    setReady(true);
   }, []);
+
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">
+        Restoring session…
+      </div>
+    );
+  }
 
   return <>{children}</>;
 }
