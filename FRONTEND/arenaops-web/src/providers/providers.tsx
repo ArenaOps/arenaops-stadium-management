@@ -3,16 +3,19 @@
 "use client";
 
 import { Provider } from "react-redux";
-import { store } from "@/store/store";
+import { store, type AppDispatch } from "@/store/store";
 import { useEffect, useState } from "react";
 import { initializeAuth } from "@/store/authSlice";
 import { ToastProvider, ToastContainer, ErrorBoundary } from "@/components/ui";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useDispatch } from "react-redux";
 
 function AuthInitializer({ children }: { children: React.ReactNode }) {
+  const dispatch = useDispatch<AppDispatch>();
+
   useEffect(() => {
-    store.dispatch(initializeAuth());
-  }, []);
+    dispatch(initializeAuth());
+  }, [dispatch]);
 
   return <>{children}</>;
 }

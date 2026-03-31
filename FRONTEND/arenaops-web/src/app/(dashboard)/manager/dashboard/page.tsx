@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button, Skeleton } from "@/components/ui";
@@ -10,21 +9,11 @@ import { useOwnerStadiums } from "@/features/dashboard/hooks/useOwnerStadiums";
 import { RecentBookingsTable } from "@/features/dashboard/components/RecentBookingsTable";
 import { StadiumCard } from "@/components/stadium/StadiumCard";
 import { Building2, CalendarDays, Ticket, Users, Plus } from "lucide-react";
+import { useAppSelector } from "@/store/hooks";
 
 export default function ManagerDashboard() {
-  const [userId, setUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser);
-        setUserId(userData.userId);
-      } catch {
-        // Invalid JSON
-      }
-    }
-  }, []);
+  const { user } = useAppSelector((state) => state.auth);
+  const userId = user?.userId ?? null;
 
   const { data, isLoading, isFetching, isError, error, refetch } =
     useManagerDashboard();

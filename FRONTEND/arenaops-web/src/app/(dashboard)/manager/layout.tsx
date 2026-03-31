@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/dashboard/sideBar";
 import { Loader2 } from "lucide-react";
+import { useAppSelector } from "@/store/hooks";
 
 export default function ManagerLayout({
   children,
@@ -11,20 +12,20 @@ export default function ManagerLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [isChecking, setIsChecking] = useState(true);
+  const { user, isAuthenticated, initialized } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
-    // Check auth from localStorage
-    const storedUser = localStorage.getItem("user");
+    if (!initialized) {
+      return;
+    }
 
-    if (!storedUser) {
+    if (!user || !isAuthenticated) {
       router.push("/login");
       return;
     }
 
     try {
-      const userData = JSON.parse(storedUser);
-      if (!userData.roles?.includes("StadiumOwner")) {
+      if (!user.roles?.includes("StadiumOwner")) {
         router.push("/");
         return;
       }
@@ -32,12 +33,10 @@ export default function ManagerLayout({
       router.push("/login");
       return;
     }
-
-    setIsChecking(false);
-  }, [router]);
+  }, [initialized, isAuthenticated, user, router]);
 
   // Show loading state while checking auth
-  if (isChecking) {
+  if (!initialized || !user || !isAuthenticated) {
     return (
       <div className="h-screen flex items-center justify-center bg-black">
         <div className="text-center">
