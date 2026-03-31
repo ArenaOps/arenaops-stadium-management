@@ -161,8 +161,8 @@ public class UpdateSectionGeometryRequest
     [Range(1, 100)]
     public int? SeatsPerRow { get; set; }
 
-    public string? VerticalAisles { get; set; }
-    public string? HorizontalAisles { get; set; }
+    public int[]? VerticalAisles { get; set; }
+    public int[]? HorizontalAisles { get; set; }
 }
 
 /// <summary>
@@ -185,21 +185,33 @@ public class SectionGeometryResponse
     public int Capacity { get; set; }
     public string? SeatType { get; set; }
     public string? Color { get; set; }
-    public double PosX { get; set; }
-    public double PosY { get; set; }
 
-    // Geometry
+    // Position (Mapping from PosX/PosY)
+    public double CenterX { get; set; }
+    public double CenterY { get; set; }
+
+    // Geometry metadata
     public string? GeometryType { get; set; } // "arc" or "rectangle"
     public string? GeometryData { get; set; } // Serialized JSON
 
-    // Seating
+    // Rectangle Geometry (Extracted from GeometryData)
+    public double Width { get; set; }
+    public double Height { get; set; }
+    public double Rotation { get; set; }
+
+    // Arc Geometry (Extracted from GeometryData)
+    public double InnerRadius { get; set; }
+    public double OuterRadius { get; set; }
+    public double StartAngle { get; set; }
+    public double EndAngle { get; set; }
+
+    // Seating configuration
     public int? Rows { get; set; }
     public int? SeatsPerRow { get; set; }
-    public int? CalculatedCapacity => Rows.HasValue && SeatsPerRow.HasValue ? Rows * SeatsPerRow : null;
     public int[]? VerticalAisles { get; set; }
     public int[]? HorizontalAisles { get; set; }
 
-    // Bowl
+    // Bowl assignment
     public Guid? BowlId { get; set; }
 
     // Metadata

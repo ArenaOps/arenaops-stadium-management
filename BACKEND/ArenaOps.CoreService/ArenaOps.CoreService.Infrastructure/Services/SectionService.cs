@@ -1,8 +1,10 @@
+using System;
+using System.Linq;
+using System.Text.Json;
 using ArenaOps.CoreService.Application.DTOs;
 using ArenaOps.CoreService.Application.Interfaces;
 using ArenaOps.CoreService.Domain.Entities;
 using ArenaOps.Shared.Models;
-using System.Text.Json;
 
 namespace ArenaOps.CoreService.Infrastructure.Services;
 
@@ -24,11 +26,11 @@ public class SectionService : ISectionService
         return ApiResponse<SectionResponse>.Ok(MapToResponse(section));
     }
 
-    public async Task<ApiResponse<IEnumerable<SectionResponse>>> GetBySeatingPlanIdAsync(Guid seatingPlanId, CancellationToken cancellationToken = default)
+    public async Task<ApiResponse<List<SectionGeometryResponse>>> GetBySeatingPlanIdAsync(Guid seatingPlanId, CancellationToken cancellationToken = default)
     {
         var sections = await _repository.GetBySeatingPlanIdAsync(seatingPlanId, cancellationToken);
-        var dtos = sections.Select(MapToResponse);
-        return ApiResponse<IEnumerable<SectionResponse>>.Ok(dtos);
+        var dtos = sections.Select(s => MapToGeometryResponse(s)).ToList();
+        return ApiResponse<List<SectionGeometryResponse>>.Ok(dtos);
     }
 
     public async Task<ApiResponse<IEnumerable<SectionResponse>>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -222,9 +224,9 @@ public class SectionService : ISectionService
                 section.SeatsPerRow = request.SeatsPerRow.Value;
 
             if (request.VerticalAisles != null)
-                section.VerticalAisles = request.VerticalAisles;
+                section.VerticalAisles = JsonSerializer.Serialize(request.VerticalAisles);
             if (request.HorizontalAisles != null)
-                section.HorizontalAisles = request.HorizontalAisles;
+                section.HorizontalAisles = JsonSerializer.Serialize(request.HorizontalAisles);
 
             // Update geometry data JSON based on type
             if (request.GeometryType.ToLower() == "arc")
@@ -283,7 +285,7 @@ public class SectionService : ISectionService
 
     private static SectionGeometryResponse MapToGeometryResponse(Section section)
     {
-        return new SectionGeometryResponse
+        var response = new SectionGeometryResponse
         {
             SectionId = section.SectionId,
             SeatingPlanId = section.SeatingPlanId,
@@ -296,8 +298,8 @@ public class SectionService : ISectionService
             // Geometry
             GeometryType = section.GeometryType,
             GeometryData = section.GeometryData,
-            PosX = section.PosX,
-            PosY = section.PosY,
+            CenterX = section.PosX,
+            CenterY = section.PosY,
 
             // Seating
             Rows = section.Rows,
@@ -311,6 +313,33 @@ public class SectionService : ISectionService
             // Metadata
             SeatCount = section.Seats?.Count ?? 0
         };
+
+        // Parse geometry data for more details if available
+        if (!string.IsNullOrEmpty(section.GeometryType) && !string.IsNullOrEmpty(section.GeometryData))
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(section.GeometryData);
+                var root = doc.RootElement;
+
+                if (section.GeometryType.Equals("arc", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (root.TryGetProperty("InnerRadius", out var ir)) response.InnerRadius = ir.GetDouble();
+                    if (root.TryGetProperty("OuterRadius", out var or)) response.OuterRadius = or.GetDouble();
+                    if (root.TryGetProperty("StartAngle", out var sa)) response.StartAngle = sa.GetDouble();
+                    if (root.TryGetProperty("EndAngle", out var ea)) response.EndAngle = ea.GetDouble();
+                }
+                else if (section.GeometryType.Equals("rectangle", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (root.TryGetProperty("Width", out var w)) response.Width = w.GetDouble();
+                    if (root.TryGetProperty("Height", out var h)) response.Height = h.GetDouble();
+                    if (root.TryGetProperty("Rotation", out var r)) response.Rotation = r.GetDouble();
+                }
+            }
+            catch { /* Fallback to basic position data */ }
+        }
+
+        return response;
     }
 
     private static SectionResponse MapToResponse(Section section)

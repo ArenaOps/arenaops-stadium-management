@@ -52,6 +52,13 @@ export interface Bowl {
   sectionIds: string[];  // Sections assigned to this bowl
   isActive: boolean;  // For event managers: can deactivate entire bowl
   displayOrder: number;  // Visual hierarchy (1 = closest to field, 2, 3...)
+  
+  // Template intent (Stored for reference/re-generation)
+  numSections?: number;
+  templateRows?: number;
+  templateSeatsPerRow?: number;
+  templateInnerRadius?: number;
+  templateOuterRadius?: number;
 }
 
 // ============================================================================
@@ -87,6 +94,7 @@ export interface LayoutSection {
   rotation: number;  // Degrees
 
   // Seating configuration
+  type: 'Seated' | 'Standing';
   rows: number;  // Typical: 25-40
   seatsPerRow: number;  // Typical: 20-30
   calculatedCapacity: number;  // rows × seatsPerRow (minus aisles)

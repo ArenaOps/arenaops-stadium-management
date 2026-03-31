@@ -96,6 +96,7 @@ export function SectionCreationModal({
       width: form.width || 200,
       height: form.height || 150,
       rotation: form.rotation || 0,
+      type: 'Seated',
       rows: form.rows,
       seatsPerRow: form.seatsPerRow,
       calculatedCapacity: form.rows * form.seatsPerRow,

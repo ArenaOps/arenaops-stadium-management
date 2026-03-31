@@ -33,6 +33,34 @@ public class Bowl
     /// </summary>
     public bool IsActive { get; set; } = true;
 
+    // ========== Creation Template Metadata ==========
+    // These fields store the "intent" during creation but are not the source of truth for rendering.
+
+    /// <summary>
+    /// Number of sections originally planned for this bowl
+    /// </summary>
+    public int? NumSections { get; set; }
+
+    /// <summary>
+    /// Number of rows per section originally planned
+    /// </summary>
+    public int? TemplateRows { get; set; }
+
+    /// <summary>
+    /// Seats per row originally planned
+    /// </summary>
+    public int? TemplateSeatsPerRow { get; set; }
+
+    /// <summary>
+    /// Original inner radius used for creation
+    /// </summary>
+    public double? TemplateInnerRadius { get; set; }
+
+    /// <summary>
+    /// Original outer radius used for creation
+    /// </summary>
+    public double? TemplateOuterRadius { get; set; }
+
     /// <summary>
     /// Timestamp of creation
     /// </summary>

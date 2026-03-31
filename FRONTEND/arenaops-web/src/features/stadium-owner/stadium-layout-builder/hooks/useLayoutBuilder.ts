@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { coreService } from "@/services/coreService";
 import type {
   LayoutBuilderState,
   FieldConfig,
@@ -14,6 +15,7 @@ import type {
 } from "../types";
 import { DEFAULT_FIELD_CONFIG } from "../types";
 import { generateAllSeats } from "../utils/seatGenerator";
+import { calculateMinimumInnerRadius } from "../utils/geometry";
 
 export interface UseLayoutBuilderOptions {
   mode: BuilderMode;
@@ -57,6 +59,10 @@ export interface UseLayoutBuilderReturn extends LayoutBuilderState {
   // State flags
   setIsLayoutLocked: (locked: boolean) => void;
   setIsDirty: (dirty: boolean) => void;
+  refreshLayout: () => void;
+
+  // Resolved Plan ID
+  planId: string;
 
   // Computed
   selectedSection: LayoutSection | null;
@@ -92,6 +98,113 @@ export function useLayoutBuilder(options: UseLayoutBuilderOptions): UseLayoutBui
   const [isLayoutLocked, setIsLayoutLocked] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
 
+  const [planId, setPlanId] = useState<string>(templateId || "");
+
+  // Fetch or create the initial seating plan
+  useEffect(() => {
+    if (templateId) {
+      setPlanId(templateId);
+      return;
+    }
+    
+    if (stadiumId) {
+      coreService.getSeatingPlans(stadiumId)
+        .then(res => {
+          if (res.success && res.data && res.data.length > 0) {
+            setPlanId(res.data[0].seatingPlanId);
+          } else {
+            // First time: Create default plan
+            coreService.createSeatingPlan(stadiumId, { name: "Default Layout" })
+              .then(createRes => {
+                if (createRes.success && createRes.data) {
+                  setPlanId(createRes.data.seatingPlanId);
+                }
+              })
+              .catch(err => console.error("Failed to create default seating plan", err));
+          }
+        })
+        .catch(err => console.error("Failed to fetch seating plans", err));
+    }
+  }, [stadiumId, templateId]);
+
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const refreshLayout = useCallback(() => setRefreshTrigger(prev => prev + 1), []);
+
+  // Fetch bowls, field config, and sections once we have the planId
+  useEffect(() => {
+    if (!planId) return;
+
+    coreService.getFieldConfig(planId).then(res => {
+        if (res.success && res.data) {
+            const baseConfig = {
+                shape: res.data.shape?.toLowerCase() === 'round' ? 'round' : 'rectangle',
+                length: res.data.length || 105,
+                width: res.data.width || 68,
+                unit: res.data.unit || 'm',
+                bufferZone: res.data.bufferZone || 5
+            } as FieldConfig;
+            
+            setFieldConfig({
+                ...baseConfig,
+                minimumInnerRadius: calculateMinimumInnerRadius(baseConfig)
+            });
+        }
+    }).catch(console.error);
+
+    Promise.all([
+      coreService.getBowls(planId).catch(e => { console.error(e); return { success: false, data: [] }; }),
+      coreService.getSections(planId).catch(e => { console.error(e); return { success: false, data: [] }; })
+    ]).then(([bowlsRes, sectionsRes]) => {
+      let fetchedSections: LayoutSection[] = [];
+      
+      if (sectionsRes.success && sectionsRes.data) {
+        fetchedSections = sectionsRes.data.map((s: any) => {
+          // New backend provides explicit geometry fields
+          // We prioritize these over legacy JSON parsing
+          return {
+            id: s.sectionId,
+            name: s.name,
+            bowlId: s.bowlId || null,
+            shape: (s.geometryType?.toLowerCase() === 'arc' ? 'arc' : 'rectangle') as 'arc' | 'rectangle',
+            centerX: s.centerX ?? 0,
+            centerY: s.centerY ?? 0,
+            innerRadius: s.innerRadius ?? 100,
+            outerRadius: s.outerRadius ?? 150,
+            startAngle: s.startAngle ?? 0,
+            endAngle: s.endAngle ?? 90,
+            width: s.width ?? 100,
+            height: s.height ?? 50,
+            rotation: s.rotation ?? 0,
+            type: s.type || 'Seated',
+            calculatedCapacity: s.capacity || 0,
+            seatType: s.seatType || 'Standard',
+            rows: s.rows || 10,
+            seatsPerRow: s.seatsPerRow || 20,
+            color: s.color || '#4F9CF9',
+            isActive: true,
+            isSymmetrical: true
+          } as unknown as LayoutSection;
+        });
+        setSections(fetchedSections);
+      }
+
+      if (bowlsRes.success && bowlsRes.data) {
+        const fetchedBowls: Bowl[] = bowlsRes.data.map((b: any) => ({
+          id: b.bowlId,
+          name: b.name,
+          color: b.color || '#4F9CF9',
+          sectionIds: fetchedSections.filter(sec => sec.bowlId === b.bowlId).map(sec => sec.id),
+          isActive: true,
+          displayOrder: b.displayOrder || 1
+        }));
+        // Sort by display order
+        fetchedBowls.sort((a, b) => a.displayOrder - b.displayOrder);
+        setBowls(fetchedBowls);
+      }
+    });
+
+  }, [planId, refreshTrigger]);
+
   // ============================================================================
   // Computed Values
   // ============================================================================
@@ -121,8 +234,9 @@ export function useLayoutBuilder(options: UseLayoutBuilderOptions): UseLayoutBui
   // ============================================================================
 
   const addBowl = useCallback((bowlData?: Partial<Bowl>) => {
+    const tempId = bowlData?.id || `bowl-${Date.now()}`;
     const newBowl: Bowl = {
-      id: bowlData?.id || `bowl-${Date.now()}`,
+      id: tempId,
       name: bowlData?.name || `Bowl ${bowls.length + 1}`,
       color: bowlData?.color || (['#4F9CF9', '#34C759', '#FFD60A', '#AF52DE'][bowls.length % 4] || '#4F9CF9'),
       sectionIds: bowlData?.sectionIds || [],
@@ -131,12 +245,35 @@ export function useLayoutBuilder(options: UseLayoutBuilderOptions): UseLayoutBui
     };
     setBowls(prev => [...prev, newBowl]);
     setIsDirty(true);
-    return newBowl.id;
-  }, [bowls.length]);
+
+    // Optimistic API Creation
+    if (planId) {
+      coreService.createBowl(planId, {
+        name: newBowl.name,
+        color: newBowl.color,
+        displayOrder: newBowl.displayOrder
+      }).then(res => {
+        if (res.success && res.data?.bowlId) {
+           // Swap temp id with real id from DB so delete works later!
+           setBowls(prev => prev.map(b => b.id === tempId ? { ...b, id: res.data.bowlId } : b));
+        }
+      }).catch(e => console.error("Failed to create bowl via API", e));
+    }
+
+    return tempId;
+  }, [bowls.length, planId]);
 
   const updateBowl = useCallback((bowlId: string, updates: Partial<Bowl>) => {
     setBowls(prev => prev.map(b => b.id === bowlId ? { ...b, ...updates } : b));
     setIsDirty(true);
+
+    if (!bowlId.startsWith('bowl-')) {
+      coreService.updateBowl(bowlId, {
+        name: updates.name,
+        color: updates.color,
+        displayOrder: updates.displayOrder
+      }).catch(e => console.error("Failed to update bowl via API", e));
+    }
   }, []);
 
   const deleteBowl = useCallback((bowlId: string) => {
@@ -149,6 +286,10 @@ export function useLayoutBuilder(options: UseLayoutBuilderOptions): UseLayoutBui
       return prev.filter(seat => !deletedSectionIds.includes(seat.sectionId));
     });
     setIsDirty(true);
+
+    if (!bowlId.startsWith('bowl-')) {
+      coreService.deleteBowl(bowlId).catch(e => console.error("Failed to delete bowl via API", e));
+    }
   }, [sections]);
 
   const reorderBowl = useCallback((bowlId: string, newOrder: number) => {
@@ -164,6 +305,10 @@ export function useLayoutBuilder(options: UseLayoutBuilderOptions): UseLayoutBui
       return bowlsCopy.map((b, i) => ({ ...b, displayOrder: i + 1 }));
     });
     setIsDirty(true);
+
+    if (!bowlId.startsWith('bowl-')) {
+      coreService.reorderBowl(bowlId, newOrder).catch(e => console.error("Failed to reorder bowl via API", e));
+    }
   }, []);
 
   // ============================================================================
@@ -171,16 +316,80 @@ export function useLayoutBuilder(options: UseLayoutBuilderOptions): UseLayoutBui
   // ============================================================================
 
   const addSection = useCallback((section: LayoutSection) => {
-    setSections(prev => [...prev, section]);
+    const tempId = section.id || `section-${Date.now()}`;
+    const newSection = { ...section, id: tempId };
+    setSections(prev => [...prev, newSection]);
     setIsDirty(true);
-  }, []);
+
+    if (planId) {
+      if (newSection.shape === 'arc') {
+        coreService.createArcSection(planId, {
+          name: newSection.name,
+          type: newSection.type || 'Seated',
+          capacity: newSection.calculatedCapacity || 0,
+          seatType: newSection.seatType || 'Standard',
+          color: newSection.color || '#4F9CF9',
+          centerX: newSection.centerX,
+          centerY: newSection.centerY,
+          innerRadius: newSection.innerRadius,
+          outerRadius: newSection.outerRadius,
+          startAngle: newSection.startAngle,
+          endAngle: newSection.endAngle,
+          rows: newSection.rows,
+          seatsPerRow: newSection.seatsPerRow,
+          verticalAisles: newSection.verticalAisles,
+          horizontalAisles: newSection.horizontalAisles
+        }).then(res => {
+          if (res.success && res.data?.sectionId) {
+            setSections(prev => prev.map(s => s.id === tempId ? { ...s, id: res.data.sectionId } : s));
+          }
+        }).catch(err => console.error("Failed to create arc section", err));
+      } else {
+        coreService.createRectangleSection(planId, {
+          name: newSection.name,
+          type: newSection.type || 'Seated',
+          capacity: newSection.calculatedCapacity || 0,
+          seatType: newSection.seatType || 'Standard',
+          color: newSection.color || '#4F9CF9',
+          centerX: newSection.centerX,
+          centerY: newSection.centerY,
+          width: newSection.width,
+          height: newSection.height,
+          rotation: newSection.rotation,
+          rows: newSection.rows,
+          seatsPerRow: newSection.seatsPerRow,
+          verticalAisles: newSection.verticalAisles,
+          horizontalAisles: newSection.horizontalAisles
+        }).then(res => {
+          if (res.success && res.data?.sectionId) {
+            setSections(prev => prev.map(s => s.id === tempId ? { ...s, id: res.data.sectionId } : s));
+          }
+        }).catch(err => console.error("Failed to create rectangle section", err));
+      }
+    }
+  }, [planId]);
 
   const updateSection = useCallback((sectionId: string, updates: Partial<LayoutSection>) => {
     setSections(prev => prev.map(s =>
       s.id === sectionId ? { ...s, ...updates } : s
     ));
     setIsDirty(true);
-  }, []);
+
+    if (updates.centerX !== undefined || updates.width !== undefined || updates.innerRadius !== undefined) {
+      // It's a geometry update
+      const sec = sections.find(s => s.id === sectionId);
+      const merged = { ...sec, ...updates } as LayoutSection;
+      
+      const payload = merged.shape === 'arc' 
+        ? { geometryType: 'arc', centerX: merged.centerX, centerY: merged.centerY, innerRadius: merged.innerRadius, outerRadius: merged.outerRadius, startAngle: merged.startAngle, endAngle: merged.endAngle }
+        : { geometryType: 'rectangle', centerX: merged.centerX, centerY: merged.centerY, width: merged.width, height: merged.height, rotation: merged.rotation };
+
+      coreService.updateSectionGeometry(sectionId, payload).catch(console.error);
+    } else {
+      // Normal update
+      coreService.updateSection(sectionId, updates).catch(console.error);
+    }
+  }, [sections]);
 
   const deleteSection = useCallback((sectionId: string) => {
     setSections(prev => prev.filter(s => s.id !== sectionId));
@@ -196,6 +405,11 @@ export function useLayoutBuilder(options: UseLayoutBuilderOptions): UseLayoutBui
     }
 
     setIsDirty(true);
+    
+    // API Call
+    if (!sectionId.startsWith('section-')) {
+      coreService.deleteSection(sectionId).catch(console.error);
+    }
   }, [selectedSectionId]);
 
   const assignSectionToBowl = useCallback((sectionId: string, bowlId: string | null) => {
@@ -218,6 +432,10 @@ export function useLayoutBuilder(options: UseLayoutBuilderOptions): UseLayoutBui
     })));
 
     setIsDirty(true);
+
+    if (!sectionId.startsWith('section-')) {
+       coreService.assignBowlToSection(sectionId, bowlId).catch(console.error);
+    }
   }, [sections]);
 
   // ============================================================================
@@ -328,6 +546,7 @@ export function useLayoutBuilder(options: UseLayoutBuilderOptions): UseLayoutBui
   useEffect(() => {
     const draftKey = `stadium-layout-draft-${stadiumId}-${mode}`;
     const draftJson = localStorage.getItem(draftKey);
+    let draftRestored = false;
 
     if (draftJson && !templateId) {
       try {
@@ -344,6 +563,7 @@ export function useLayoutBuilder(options: UseLayoutBuilderOptions): UseLayoutBui
             setBowls(draft.bowls);
             setSections(draft.sections);
             setIsDirty(true);
+            draftRestored = true;
             console.log('[Auto-save] Draft restored');
           }
         }
@@ -351,7 +571,18 @@ export function useLayoutBuilder(options: UseLayoutBuilderOptions): UseLayoutBui
         console.error('[Auto-save] Failed to load draft:', error);
       }
     }
-  }, [stadiumId, mode, templateId]);
+
+    if (!draftRestored && planId) {
+      // Fetch Bowls setup from the API asynchronously if no draft was restored
+      coreService.getBowls(planId)
+        .then(res => {
+          if (res.success && res.data) {
+            setBowls(res.data as Bowl[]);
+          }
+        })
+        .catch(err => console.error("Failed to fetch bowls via API", err));
+    }
+  }, [stadiumId, mode, templateId, planId]);
 
   // ============================================================================
   // Return
@@ -362,6 +593,7 @@ export function useLayoutBuilder(options: UseLayoutBuilderOptions): UseLayoutBui
     mode,
     stadiumId,
     eventId,
+    planId,
     fieldConfig,
     bowls,
     sections,
@@ -415,5 +647,6 @@ export function useLayoutBuilder(options: UseLayoutBuilderOptions): UseLayoutBui
     selectedSection,
     totalCapacity,
     stats,
+    refreshLayout,
   };
 }

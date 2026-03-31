@@ -39,22 +39,16 @@ public class BowlService : IBowlService
                 Color = request.Color,
                 DisplayOrder = request.DisplayOrder,
                 IsActive = true,
+                NumSections = request.NumSections,
+                TemplateRows = request.TemplateRows,
+                TemplateSeatsPerRow = request.TemplateSeatsPerRow,
+                TemplateInnerRadius = request.TemplateInnerRadius,
+                TemplateOuterRadius = request.TemplateOuterRadius,
                 CreatedAt = DateTime.UtcNow
             };
 
             var bowlId = await _bowlRepository.CreateAsync(bowl);
-
-            var response = new BowlResponse
-            {
-                BowlId = bowlId,
-                SeatingPlanId = request.SeatingPlanId,
-                Name = bowl.Name,
-                Color = bowl.Color,
-                DisplayOrder = bowl.DisplayOrder,
-                IsActive = bowl.IsActive,
-                SectionIds = new(),
-                CreatedAt = bowl.CreatedAt
-            };
+            var response = MapToBowlResponse(bowl);
 
             return ApiResponse<BowlResponse>.Ok(response, "Bowl created successfully");
         }
@@ -75,17 +69,8 @@ public class BowlService : IBowlService
             cancellationToken.ThrowIfCancellationRequested();
             var bowls = await _bowlRepository.GetBySeatingPlanIdAsync(seatingPlanId);
 
-            var responses = bowls.Select(b => new BowlResponse
-            {
-                BowlId = b.BowlId,
-                SeatingPlanId = b.SeatingPlanId,
-                Name = b.Name,
-                Color = b.Color,
-                DisplayOrder = b.DisplayOrder,
-                IsActive = b.IsActive,
-                SectionIds = b.Sections.Select(s => s.SectionId).ToList(),
-                CreatedAt = b.CreatedAt
-            }).ToList();
+            var responses = bowls.Select(MapToBowlResponse).ToList();
+            return ApiResponse<List<BowlResponse>>.Ok(responses);
 
             return ApiResponse<List<BowlResponse>>.Ok(responses);
         }
@@ -111,19 +96,7 @@ public class BowlService : IBowlService
                 return ApiResponse<BowlResponse>.Fail("BOWL_NOT_FOUND", $"Bowl {bowlId} not found");
             }
 
-            var response = new BowlResponse
-            {
-                BowlId = bowl.BowlId,
-                SeatingPlanId = bowl.SeatingPlanId,
-                Name = bowl.Name,
-                Color = bowl.Color,
-                DisplayOrder = bowl.DisplayOrder,
-                IsActive = bowl.IsActive,
-                SectionIds = bowl.Sections.Select(s => s.SectionId).ToList(),
-                CreatedAt = bowl.CreatedAt
-            };
-
-            return ApiResponse<BowlResponse>.Ok(response);
+            return ApiResponse<BowlResponse>.Ok(MapToBowlResponse(bowl));
         }
         catch (OperationCanceledException)
         {
@@ -151,21 +124,15 @@ public class BowlService : IBowlService
             bowl.Color = request.Color;
             bowl.DisplayOrder = request.DisplayOrder;
 
+            // Update template metadata
+            bowl.NumSections = request.NumSections;
+            bowl.TemplateRows = request.TemplateRows;
+            bowl.TemplateSeatsPerRow = request.TemplateSeatsPerRow;
+            bowl.TemplateInnerRadius = request.TemplateInnerRadius;
+            bowl.TemplateOuterRadius = request.TemplateOuterRadius;
+
             await _bowlRepository.UpdateAsync(bowl);
-
-            var response = new BowlResponse
-            {
-                BowlId = bowl.BowlId,
-                SeatingPlanId = bowl.SeatingPlanId,
-                Name = bowl.Name,
-                Color = bowl.Color,
-                DisplayOrder = bowl.DisplayOrder,
-                IsActive = bowl.IsActive,
-                SectionIds = bowl.Sections.Select(s => s.SectionId).ToList(),
-                CreatedAt = bowl.CreatedAt
-            };
-
-            return ApiResponse<BowlResponse>.Ok(response, "Bowl updated successfully");
+            return ApiResponse<BowlResponse>.Ok(MapToBowlResponse(bowl), "Bowl updated successfully");
         }
         catch (OperationCanceledException)
         {
@@ -216,20 +183,7 @@ public class BowlService : IBowlService
 
             bowl.DisplayOrder = newDisplayOrder;
             await _bowlRepository.UpdateAsync(bowl);
-
-            var response = new BowlResponse
-            {
-                BowlId = bowl.BowlId,
-                SeatingPlanId = bowl.SeatingPlanId,
-                Name = bowl.Name,
-                Color = bowl.Color,
-                DisplayOrder = bowl.DisplayOrder,
-                IsActive = bowl.IsActive,
-                SectionIds = bowl.Sections.Select(s => s.SectionId).ToList(),
-                CreatedAt = bowl.CreatedAt
-            };
-
-            return ApiResponse<BowlResponse>.Ok(response, "Bowl reordered successfully");
+            return ApiResponse<BowlResponse>.Ok(MapToBowlResponse(bowl), "Bowl reordered successfully");
         }
         catch (OperationCanceledException)
         {
@@ -239,5 +193,25 @@ public class BowlService : IBowlService
         {
             return ApiResponse<BowlResponse>.Fail("BOWL_REORDER_ERROR", ex.Message);
         }
+    }
+
+    private static BowlResponse MapToBowlResponse(Bowl bowl)
+    {
+        return new BowlResponse
+        {
+            BowlId = bowl.BowlId,
+            SeatingPlanId = bowl.SeatingPlanId,
+            Name = bowl.Name,
+            Color = bowl.Color,
+            DisplayOrder = bowl.DisplayOrder,
+            IsActive = bowl.IsActive,
+            SectionIds = bowl.Sections?.Select(s => s.SectionId).ToList() ?? new(),
+            NumSections = bowl.NumSections,
+            TemplateRows = bowl.TemplateRows,
+            TemplateSeatsPerRow = bowl.TemplateSeatsPerRow,
+            TemplateInnerRadius = bowl.TemplateInnerRadius,
+            TemplateOuterRadius = bowl.TemplateOuterRadius,
+            CreatedAt = bowl.CreatedAt
+        };
     }
 }

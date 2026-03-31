@@ -112,6 +112,7 @@ export function generateDefaultLayout(
       width: 0, // Not used for arc
       height: 0, // Not used for arc
       rotation: 0,
+      type: 'Seated',
       rows: rowsPerSection,
       seatsPerRow,
       calculatedCapacity,

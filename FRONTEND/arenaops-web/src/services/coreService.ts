@@ -148,6 +148,17 @@ export interface BookingSeat {
     sectionType: 'Seated' | 'Standing';
 }
 
+export interface CreateBowlPayload {
+    name: string;
+    color?: string;
+    displayOrder: number;
+    numSections?: number;
+    templateRows?: number;
+    templateSeatsPerRow?: number;
+    templateInnerRadius?: number;
+    templateOuterRadius?: number;
+}
+
 // Event Layout
 export interface EventLayout {
     eventSeatingPlanId: string;
@@ -224,7 +235,10 @@ export const coreService = {
         const response = await api.get(`/api/core/seating-plans/${id}`);
         return response.data;
     },
-
+    createSeatingPlan: async (stadiumId: string, payload: { name: string; description?: string }): Promise<ApiResponse<SeatingPlan>> => {
+        const response = await api.post(`/api/core/stadiums/${stadiumId}/seating-plans`, payload);
+        return response.data;
+    },
     // ── Events ───────────────────────────────────────────
     getEvents: async (status?: string): Promise<ApiResponse<Event[]>> => {
         const params = status ? `?status=${status}` : '';
@@ -240,6 +254,7 @@ export const coreService = {
         data: [],
         success: false,
         message: 'Unable to load events',
+        error: { code: 'FETCH_ERROR', message: 'Unable to load events' }
     };
 }
     },
@@ -345,6 +360,11 @@ export const coreService = {
         return response.data;
     },
 
+    getSeat: async (seatId: string): Promise<ApiResponse<any>> => {
+        const response = await api.get(`/api/core/seats/${seatId}`);
+        return response.data;
+    },
+
     holdStanding: async (eventId: string, sectionId: string, quantity: number): Promise<ApiResponse<unknown>> => {
         const response = await api.post(`/api/core/events/${eventId}/standing/${sectionId}/hold`, { quantity });
         return response.data;
@@ -369,7 +389,7 @@ export const coreService = {
     },
 
     // ── Bowl Management ──────────────────────────────────
-    createBowl: async (seatingPlanId: string, payload: { name: string; color?: string; displayOrder: number }): Promise<ApiResponse<any>> => {
+    createBowl: async (seatingPlanId: string, payload: CreateBowlPayload): Promise<ApiResponse<any>> => {
         const response = await api.post(`/api/core/seating-plans/${seatingPlanId}/bowls`, payload);
         return response.data;
     },
@@ -423,6 +443,26 @@ export const coreService = {
 
     updateSectionGeometry: async (sectionId: string, payload: any): Promise<ApiResponse<any>> => {
         const response = await api.put(`/api/core/sections/${sectionId}/geometry`, payload);
+        return response.data;
+    },
+
+    updateSection: async (sectionId: string, payload: any): Promise<ApiResponse<any>> => {
+        const response = await api.put(`/api/core/sections/${sectionId}`, payload);
+        return response.data;
+    },
+
+    deleteSection: async (sectionId: string): Promise<ApiResponse<any>> => {
+        const response = await api.delete(`/api/core/sections/${sectionId}`);
+        return response.data;
+    },
+
+    getSections: async (seatingPlanId: string): Promise<ApiResponse<any[]>> => {
+        const response = await api.get(`/api/core/seating-plans/${seatingPlanId}/sections`);
+        return response.data;
+    },
+
+    getSection: async (sectionId: string): Promise<ApiResponse<any>> => {
+        const response = await api.get(`/api/core/sections/${sectionId}`);
         return response.data;
     },
 

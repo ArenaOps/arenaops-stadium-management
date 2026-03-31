@@ -14,11 +14,18 @@ public class CreateBowlRequest
     [StringLength(20)]
     public string? Color { get; set; }
 
+    [Required]
+    public Guid SeatingPlanId { get; set; }
+
     [Range(1, int.MaxValue)]
     public int DisplayOrder { get; set; } = 1;
 
-    [Required]
-    public Guid SeatingPlanId { get; set; }
+    // Template metadata (Original creation intent)
+    public int? NumSections { get; set; }
+    public int? TemplateRows { get; set; }
+    public int? TemplateSeatsPerRow { get; set; }
+    public double? TemplateInnerRadius { get; set; }
+    public double? TemplateOuterRadius { get; set; }
 }
 
 /// <summary>
@@ -35,6 +42,13 @@ public class UpdateBowlRequest
 
     [Range(1, int.MaxValue)]
     public int DisplayOrder { get; set; }
+
+    // Template metadata (Original creation intent)
+    public int? NumSections { get; set; }
+    public int? TemplateRows { get; set; }
+    public int? TemplateSeatsPerRow { get; set; }
+    public double? TemplateInnerRadius { get; set; }
+    public double? TemplateOuterRadius { get; set; }
 }
 
 /// <summary>
@@ -58,5 +72,13 @@ public class BowlResponse
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; }
     public List<Guid> SectionIds { get; set; } = new();
+
+    // Template metadata
+    public int? NumSections { get; set; }
+    public int? TemplateRows { get; set; }
+    public int? TemplateSeatsPerRow { get; set; }
+    public double? TemplateInnerRadius { get; set; }
+    public double? TemplateOuterRadius { get; set; }
+
     public DateTime CreatedAt { get; set; }
 }

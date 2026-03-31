@@ -14,7 +14,8 @@ import { BowlFormDialog, type BowlFormData } from "./components/BowlFormDialog";
 import { SectionFocusEditor } from "./components/SectionFocusEditor";
 import { getRangeSelection } from "./utils/selectionAlgorithms";
 import { calculateMinimumInnerRadius } from "./utils/geometry";
-import type { BuilderMode, FieldConfig, LayoutSection, Bowl } from "./types";
+import { coreService } from "@/services/coreService";
+import type { BuilderMode, FieldConfig, LayoutSection, Bowl } from "./types";   
 
 const CANVAS_WIDTH = 1400;
 const CANVAS_HEIGHT = 900;
@@ -77,7 +78,9 @@ export function StadiumLayoutBuilder({
     isLayoutLocked,
     setIsLayoutLocked,
     isDirty,
+    planId,
     stats,
+    refreshLayout,
   } = useLayoutBuilder({ mode, stadiumId, eventId, templateId });
 
   // ============================================================================
@@ -108,8 +111,8 @@ export function StadiumLayoutBuilder({
   // Event Handlers
   // ============================================================================
 
-  const handleFieldConfigChange = async (newConfig: Partial<FieldConfig>) => {
-    await updateFieldConfig(newConfig);
+  const handleFieldConfigChange = (newConfig: Partial<FieldConfig>) => {
+    updateFieldConfig(newConfig);
   };
 
   // Helper: Convert HSL to Hex color
@@ -147,24 +150,24 @@ export function StadiumLayoutBuilder({
 
   // Handler: Save bowl from form dialog (create or edit)
   const handleBowlFormSave = useCallback(async (data: BowlFormData) => {
+    if (!planId) return;
+    
+    setSaving(true);
     try {
       const minInnerRadius = calculateMinimumInnerRadius(fieldConfig);
 
-      // Calculate actual radius values
+      // Calculate actual radius values for template intent
       let innerRadius = data.innerRadius;
       let outerRadius = data.outerRadius;
 
-      // If no custom radius provided, calculate auto radius
       if (!innerRadius || !outerRadius) {
         if (editingBowlData) {
-          // Editing: keep existing radius from sections
           const bowlSections = sections.filter(s => s.bowlId === editingBowlData.id);
           if (bowlSections.length > 0 && bowlSections[0].shape === 'arc') {
             innerRadius = innerRadius || bowlSections[0].innerRadius;
             outerRadius = outerRadius || bowlSections[0].outerRadius;
           }
         } else {
-          // Creating: auto-stack on top of existing bowls
           let maxOuterRadius = minInnerRadius;
           sections.forEach(section => {
             if (section.shape === 'arc' && section.outerRadius > maxOuterRadius) {
@@ -173,30 +176,49 @@ export function StadiumLayoutBuilder({
           });
 
           if (maxOuterRadius > minInnerRadius) {
-            // Stack after existing bowls
             innerRadius = innerRadius || maxOuterRadius + 10;
             outerRadius = outerRadius || maxOuterRadius + 90;
           } else {
-            // First bowl
             innerRadius = innerRadius || minInnerRadius + 20;
             outerRadius = outerRadius || minInnerRadius + 100;
           }
         }
       }
 
-      // Generate sections for this bowl
-      const newSections: LayoutSection[] = [];
+      // 1. Create/Update Bowl via API
+      let bowlId: string;
+      if (editingBowlData) {
+        bowlId = editingBowlData.id;
+        await coreService.updateBowl(bowlId, {
+          name: data.name,
+          displayOrder: editingBowlData.displayOrder
+        });
+      } else {
+        const bowlColor = ['#4F9CF9', '#34C759', '#FFD60A', '#AF52DE'][bowls.length % 4] || '#4F9CF9';
+        const bowlRes = await coreService.createBowl(planId, {
+          name: data.name,
+          color: bowlColor,
+          displayOrder: bowls.length + 1,
+          numSections: data.numSections,
+          templateRows: data.rowsPerSection,
+          templateSeatsPerRow: Math.ceil(data.seatsPerSection / data.rowsPerSection),
+          templateInnerRadius: innerRadius,
+          templateOuterRadius: outerRadius
+        });
+        
+        if (!bowlRes.success || !bowlRes.data?.bowlId) {
+          throw new Error(bowlRes.message || "Failed to create bowl");
+        }
+        bowlId = bowlRes.data.bowlId;
+      }
+
+      // 2. Generate and Create Sections via API (Sequential Orchestration)
       const totalAngle = 360;
       const anglePerSection = totalAngle / data.numSections;
-
-      // Dynamic gap: smaller gap for more sections
       const gapAngle = Math.max(2, Math.min(5, 40 / data.numSections));
       const sectionSpan = anglePerSection - gapAngle;
 
-      // Generate bowl ID
-      const bowlId = editingBowlData?.id || `bowl-${Date.now()}`;
-
-      // Directional names for sections
+      // Directional naming helper
       const getDirectionalName = (centerAngle: number): string => {
         const normalized = ((centerAngle % 360) + 360) % 360;
         if (normalized >= 337.5 || normalized < 22.5) return 'N';
@@ -209,26 +231,26 @@ export function StadiumLayoutBuilder({
         return 'NW';
       };
 
-      // Track sequence numbers per direction for unique naming
       const directionCounts: Record<string, number> = {};
 
       for (let i = 0; i < data.numSections; i++) {
         const startAngle = i * anglePerSection + (gapAngle / 2);
         const endAngle = startAngle + sectionSpan;
         const centerAngle = (startAngle + endAngle) / 2;
-
-        const sectionId = `section-${bowlId}-${i}-${Date.now()}`;
         const dirName = getDirectionalName(centerAngle);
-
-        // Increment sequence number for this direction
         directionCounts[dirName] = (directionCounts[dirName] || 0) + 1;
-        const sequenceNum = directionCounts[dirName];
+        
+        const sectionName = `${data.name} ${dirName} ${directionCounts[dirName]}`;
+        const sectionColor = hslToHex((i * 360) / data.numSections, 60, 70);
 
-        const newSection: LayoutSection = {
-          id: sectionId,
-          name: `${data.name} ${dirName} ${sequenceNum}`,
-          shape: 'arc',
-          centerX: 700, // Canvas center
+        // Create Section via API
+        const secRes = await coreService.createArcSection(planId, {
+          name: sectionName,
+          type: 'Seated',
+          capacity: data.seatsPerSection,
+          seatType: 'Standard',
+          color: sectionColor,
+          centerX: 700,
           centerY: 450,
           innerRadius: innerRadius!,
           outerRadius: outerRadius!,
@@ -236,60 +258,20 @@ export function StadiumLayoutBuilder({
           endAngle,
           rows: data.rowsPerSection,
           seatsPerRow: Math.ceil(data.seatsPerSection / data.rowsPerSection),
-          calculatedCapacity: data.seatsPerSection,
-          color: hslToHex((i * 360) / data.numSections, 60, 70),
-          bowlId,
-          // Required fields with defaults
-          width: 0,
-          height: 0,
-          rotation: 0,
-          seatType: 'standard',
           verticalAisles: [],
-          horizontalAisles: [],
-          isActive: true,
-          isLocked: false,
-        };
+          horizontalAisles: []
+        });
 
-        newSections.push(newSection);
+        if (secRes.success && secRes.data?.sectionId) {
+          // 3. Assign Section to Bowl via API
+          await coreService.assignBowlToSection(secRes.data.sectionId, bowlId);
+        }
       }
 
-      if (editingBowlData) {
-        // Editing existing bowl: delete old sections, add new ones
-        const oldSectionIds = editingBowlData.sectionIds;
-        oldSectionIds.forEach(sectionId => {
-          deleteSection(sectionId);
-        });
-
-        // Add new sections
-        newSections.forEach(section => {
-          addSection(section);
-        });
-
-        // Update bowl
-        await updateBowl(editingBowlData.id, {
-          name: data.name,
-          sectionIds: newSections.map(s => s.id),
-        });
-
-        console.log(`✏️ Updated bowl "${data.name}" with ${data.numSections} sections`);
-      } else {
-        // Creating new bowl
-        // Add sections first
-        newSections.forEach(section => {
-          addSection(section);
-        });
-
-        // Add bowl with all data at once
-        await addBowl({
-          name: data.name,
-          sectionIds: newSections.map(s => s.id),
-        });
-
-        console.log(`✨ Created bowl "${data.name}" with ${data.numSections} sections (radius: ${innerRadius} → ${outerRadius})`);
-      }
-
-      // Generate seats for all sections
-      generateSeats();
+      // 4. Refresh Everything from Server
+      refreshLayout();
+      
+      console.log(`✅ Bowl "${data.name}" and ${data.numSections} sections created and synced.`);
 
       // Close dialog
       setShowBowlFormDialog(false);
@@ -298,8 +280,11 @@ export function StadiumLayoutBuilder({
     } catch (error) {
       console.error('[Bowl Form Save] Error:', error);
       alert(`Failed to save bowl: ${(error as Error).message}`);
+    } finally {
+      setSaving(false);
     }
-  }, [fieldConfig, sections, bowls, editingBowlData, stadiumId, addSection, addBowl, updateBowl, deleteSection, generateSeats]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fieldConfig, sections, bowls, editingBowlData, planId, refreshLayout]);
 
   const handleSectionSelect = (sectionId: string | null) => {
     selectSection(sectionId);
@@ -330,22 +315,52 @@ export function StadiumLayoutBuilder({
   };
 
   const handleSaveTemplate = async () => {
-    // TODO: Implement save logic in Phase 9
-    console.log('Save template:', { fieldConfig, bowls, sections });
     setSaving(true);
-    // API calls will go here
-    setTimeout(() => {
+    try {
+      // Use the resolved planId from the hook
+      if (!planId) throw new Error("Plan ID not initialized yet.");
+      await coreService.updateFieldConfig(planId, fieldConfig);
+
+      for (const section of sections) {
+        if (section.shape === 'arc' || section.shape === 'rectangle') {
+          // Flattened geometry attributes are available directly on LayoutSection
+          await coreService.updateSectionGeometry(section.id, {
+            shape: section.shape,
+            centerX: section.centerX,
+            centerY: section.centerY,
+            innerRadius: section.innerRadius,
+            outerRadius: section.outerRadius,
+            startAngle: section.startAngle,
+            endAngle: section.endAngle,
+            width: section.width,
+            height: section.height,
+            rotation: section.rotation,
+          });
+        }
+      }
+
+      alert('Template saved successfully via API!');
+    } catch (error) {
+      console.error("Save template error:", error);
+      alert('Failed to save template: ' + (error as Error).message);
+    } finally {
       setSaving(false);
-      alert('Template saved successfully!');
-    }, 1000);
+    }
   };
 
   const handleLockLayout = async () => {
     if (!confirm('Locking the layout will prevent further changes. Continue?')) {
       return;
     }
-    // TODO: API call to lock layout
-    setIsLayoutLocked(true);
+    
+    try {
+      if (eventId) {
+        await coreService.lockLayout(eventId);
+      }
+      setIsLayoutLocked(true);
+    } catch (error) {
+      alert('Failed to lock layout: ' + (error as Error).message);
+    }
   };
 
   const handleGenerateSeats = async () => {
@@ -353,10 +368,15 @@ export function StadiumLayoutBuilder({
       alert('Please lock the layout before generating seats.');
       return;
     }
+    
     try {
+      // Inform the API to generate seats structurally, then generate locally
+      if (eventId) {
+        await coreService.generateSeats(eventId);
+      }
       generateSeats();
       setViewMode('seats'); // Auto-switch to seats view
-      alert(`Generated ${seats.length} seats!`);
+      alert(`Generated ${seats.length} seats via API!`);
     } catch (error) {
       alert('Seat generation failed: ' + (error as Error).message);
     }
