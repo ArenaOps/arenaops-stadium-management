@@ -6,7 +6,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { googleLoginUser, loginFailure } from "@/store/authSlice";
 import { AppDispatch, RootState } from "@/store/store";
 import { useToastActions } from "@/components/ui/toast";
-import { AppError } from "@/types/error";
 
 export default function AuthCallbackClient() {
   const router = useRouter();
@@ -37,7 +36,7 @@ export default function AuthCallbackClient() {
 
       dispatch(googleLoginUser({ code, redirectUri }))
         .unwrap()
-        .then((res: any) => {
+        .then((res) => {
           success("Google Login successful!");
           if (res?.roles?.includes("Admin")) {
             router.push("/admin/dashboard");
@@ -49,9 +48,15 @@ export default function AuthCallbackClient() {
             router.push("/");
           }
         })
-        .catch((err: AppError) => {
+        .catch((err: unknown) => {
+          const message =
+            err instanceof Error
+              ? err.message
+              : typeof err === "string"
+                ? err
+                : "Google login failed.";
           console.error("Google Auth Failed:", err);
-          showError(String(err) || "Google login failed.");
+          showError(message);
           router.push("/login");
         });
     } else {

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
+import Image from "next/image";
 import {
     ArrowLeft,
     Building2,
@@ -72,48 +73,52 @@ export default function StadiumDetailPage() {
         longitude: 0,
     });
 
-    useEffect(() => {
-        if (stadiumId) {
-            fetchStadiumData();
-        }
-    }, [stadiumId]);
-
-    const fetchStadiumData = async () => {
-        try {
-            const [stadiumRes, eventsRes] = await Promise.all([
-                coreService.getStadium(stadiumId),
-                coreService.getEventsByStadium(stadiumId).catch(() => ({ success: false, data: [] })),
-            ]);
-
-            if (stadiumRes.success && stadiumRes.data) {
-                const s = stadiumRes.data;
-                setStadium(s);
-                setFormData({
-                    name: s.name || "",
-                    address: s.address || "",
-                    city: s.city || "",
-                    state: s.state || "",
-                    country: s.country || "",
-                    pincode: s.pincode || "",
-                    latitude: s.latitude || 0,
-                    longitude: s.longitude || 0,
-                });
-            }
-
-            if (eventsRes.success && eventsRes.data) {
-                setEvents(eventsRes.data);
-            }
-        } catch {
-            showNotification("error", "Failed to load stadium");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const showNotification = (type: "success" | "error", message: string) => {
+    const showNotification = useCallback((type: "success" | "error", message: string) => {
         setNotification({ type, message });
         setTimeout(() => setNotification(null), 4000);
-    };
+    }, []);
+
+    useEffect(() => {
+        if (!stadiumId) {
+            return;
+        }
+
+        const fetchStadiumData = async () => {
+            try {
+                const [stadiumRes, eventsRes] = await Promise.all([
+                    coreService.getStadium(stadiumId),
+                    coreService
+                        .getEventsByStadium(stadiumId)
+                        .catch(() => ({ success: false, data: [] })),
+                ]);
+
+                if (stadiumRes.success && stadiumRes.data) {
+                    const s = stadiumRes.data;
+                    setStadium(s);
+                    setFormData({
+                        name: s.name || "",
+                        address: s.address || "",
+                        city: s.city || "",
+                        state: s.state || "",
+                        country: s.country || "",
+                        pincode: s.pincode || "",
+                        latitude: s.latitude || 0,
+                        longitude: s.longitude || 0,
+                    });
+                }
+
+                if (eventsRes.success && eventsRes.data) {
+                    setEvents(eventsRes.data);
+                }
+            } catch {
+                showNotification("error", "Failed to load stadium");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        void fetchStadiumData();
+    }, [stadiumId, showNotification]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type } = e.target;
@@ -328,7 +333,14 @@ export default function StadiumDetailPage() {
                             <label className={styles.label}>Stadium Image</label>
                             {previewUrl ? (
                                 <div className={styles.imagePreview}>
-                                    <img src={previewUrl} alt="Preview" />
+                                    <Image
+                                        src={previewUrl}
+                                        alt="Preview"
+                                        width={1200}
+                                        height={600}
+                                        unoptimized
+                                        style={{ width: "100%", height: "200px", objectFit: "cover" }}
+                                    />
                                     <button
                                         type="button"
                                         className={styles.removeImage}

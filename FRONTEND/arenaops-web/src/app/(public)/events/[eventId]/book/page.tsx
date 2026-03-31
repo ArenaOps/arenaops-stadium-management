@@ -12,14 +12,23 @@ type Props = {
 export default async function EventBookingPage({ params }: Props) {
   const { eventId } = await params;
 
-  let layout: SeatingPlanLayout = buildDirectionalStadiumLayout(); // Default mock layout
+  const fallbackLayout = buildDirectionalStadiumLayout();
+  let layout: SeatingPlanLayout = fallbackLayout;
 
   try {
     const layoutResponse = await coreService.getEventLayout(eventId);
     if (layoutResponse.data) {
-      // The EventLayout from backend has a different structure, cast it for now
-      // TODO: Align backend EventLayout with frontend SeatingPlanLayout structure
-      layout = layoutResponse.data as any as SeatingPlanLayout;
+      const normalizedLayout = layoutResponse.data as unknown as Partial<SeatingPlanLayout>;
+
+      layout = {
+        ...fallbackLayout,
+        ...normalizedLayout,
+        stadium: normalizedLayout.stadium ?? fallbackLayout.stadium,
+        seatingPlan: normalizedLayout.seatingPlan ?? fallbackLayout.seatingPlan,
+        sections: normalizedLayout.sections ?? fallbackLayout.sections,
+        seats: normalizedLayout.seats ?? fallbackLayout.seats,
+        landmarks: normalizedLayout.landmarks ?? fallbackLayout.landmarks,
+      };
     }
   } catch (error) {
     console.error("Failed to load event layout, using mock:", error);

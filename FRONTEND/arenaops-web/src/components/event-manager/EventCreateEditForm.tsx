@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -39,7 +39,7 @@ export default function EventCreateEditForm({ event, isEditing = false }: EventC
     handleSubmit,
     formState: { errors, isSubmitting },
     setValue,
-    watch,
+    control,
   } = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: event
@@ -52,7 +52,10 @@ export default function EventCreateEditForm({ event, isEditing = false }: EventC
       : DEFAULT_EVENT_FORM_VALUES,
   });
 
-  const selectedStadiumId = watch('stadiumId');
+  const selectedStadiumId = useWatch({
+    control,
+    name: 'stadiumId',
+  });
 
   // Load stadiums on mount
   useEffect(() => {

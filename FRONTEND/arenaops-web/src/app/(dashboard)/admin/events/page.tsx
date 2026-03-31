@@ -15,7 +15,6 @@ import {
   RefreshCw,
   AlertTriangle,
   Filter,
-  Eye,
   Edit,
   Trash2,
   CheckCircle2,
@@ -23,6 +22,7 @@ import {
   Clock,
   Play,
 } from "lucide-react";
+import Image from "next/image";
 import { formatDistanceToNow } from "date-fns";
 
 const STATUS_OPTIONS: { value: string; label: string; color: string }[] = [
@@ -241,10 +241,13 @@ export default function EventsPage() {
 
                 {event.imageUrl && (
                   <div className="relative h-32 rounded-lg overflow-hidden bg-slate-100">
-                    <img
+                    <Image
                       src={event.imageUrl}
                       alt={event.name}
-                      className="w-full h-full object-cover"
+                      fill
+                      unoptimized
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      className="object-cover"
                     />
                   </div>
                 )}
