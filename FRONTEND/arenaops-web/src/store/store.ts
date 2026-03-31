@@ -1,9 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./authSlice";
+import stadiumsReducer from "./stadiumsSlice";
+import eventsReducer from "./eventsSlice";
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
+    stadiums: stadiumsReducer,
+    events: eventsReducer,
   },
 });
 

@@ -32,4 +32,49 @@ public interface IEventSeatService
     /// </summary>
     Task<ApiResponse<IEnumerable<EventSeatResponse>>> GetByEventIdAsync(
         Guid eventId, CancellationToken cancellationToken = default);
+
+    // ─── Seat Hold Operations ────────────────────────────────────────────
+
+    /// <summary>
+    /// Hold a single seat for a user. Uses sp_ManageSeating HOLD action.
+    /// Hold expires after holdDurationSeconds (default 600 = 10 minutes).
+    ///
+    /// Pre-conditions:
+    ///   - Seat must exist and belong to the specified event.
+    ///   - Seat must be Available or have an expired hold.
+    ///
+    /// Returns: SeatHoldResponse with the held seat details.
+    /// Errors:
+    ///   - SEAT_NOT_FOUND: Seat doesn't exist
+    ///   - SEAT_UNAVAILABLE: Seat is already held by another user
+    /// </summary>
+    Task<ApiResponse<SeatHoldResponse>> HoldSeatAsync(
+        Guid eventId, Guid eventSeatId, Guid userId, int holdDurationSeconds = 600,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Release a held seat back to Available status.
+    /// Only the user who holds the seat can release it.
+    ///
+    /// Returns: SeatReleaseResponse with confirmation.
+    /// Errors:
+    ///   - SEAT_NOT_FOUND: Seat doesn't exist
+    ///   - NOT_HELD_BY_USER: Seat is not held by this user
+    /// </summary>
+    Task<ApiResponse<SeatReleaseResponse>> ReleaseSeatAsync(
+        Guid eventId, Guid eventSeatId, Guid userId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Hold multiple standing section slots for a user.
+    /// Atomically holds up to `quantity` available slots in the section.
+    ///
+    /// Returns: StandingHoldResponse with the list of held seat IDs.
+    /// Errors:
+    ///   - SECTION_NOT_FOUND: Section doesn't exist
+    ///   - INSUFFICIENT_AVAILABILITY: Not enough available slots
+    /// </summary>
+    Task<ApiResponse<StandingHoldResponse>> HoldStandingAsync(
+        Guid eventId, Guid eventSectionId, Guid userId, int quantity, int holdDurationSeconds = 600,
+        CancellationToken cancellationToken = default);
 }

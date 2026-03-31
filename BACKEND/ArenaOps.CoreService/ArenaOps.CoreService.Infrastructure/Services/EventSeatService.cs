@@ -210,6 +210,155 @@ public class EventSeatService : IEventSeatService
         return ApiResponse<IEnumerable<EventSeatResponse>>.Ok(seats.Select(MapToResponse));
     }
 
+    // ─── Seat Hold Operations ────────────────────────────────────────────
+
+    public async Task<ApiResponse<SeatHoldResponse>> HoldSeatAsync(
+        Guid eventId, Guid eventSeatId, Guid userId, int holdDurationSeconds = 600,
+        CancellationToken cancellationToken = default)
+    {
+        // Verify seat exists and belongs to the event
+        var seat = await _eventSeatRepo.GetByIdAsync(eventSeatId, cancellationToken);
+        if (seat == null)
+        {
+            return ApiResponse<SeatHoldResponse>.Fail(
+                "SEAT_NOT_FOUND",
+                "The specified seat does not exist.");
+        }
+
+        if (seat.EventId != eventId)
+        {
+            return ApiResponse<SeatHoldResponse>.Fail(
+                "SEAT_NOT_FOUND",
+                "The seat does not belong to the specified event.");
+        }
+
+        // Call stored procedure via repository
+        var result = await _eventSeatRepo.HoldSeatAsync(eventId, eventSeatId, userId, holdDurationSeconds, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            var errorCode = result.IsBusinessRuleViolation ? "SEAT_UNAVAILABLE" : "HOLD_FAILED";
+            return ApiResponse<SeatHoldResponse>.Fail(errorCode, result.Message);
+        }
+
+        // Fetch updated seat to get LockedUntil
+        var updatedSeat = await _eventSeatRepo.GetByIdAsync(eventSeatId, cancellationToken);
+
+        return ApiResponse<SeatHoldResponse>.Ok(new SeatHoldResponse
+        {
+            EventSeatId = eventSeatId,
+            EventId = eventId,
+            Status = "Held",
+            LockedUntil = updatedSeat?.LockedUntil,
+            Message = result.Message
+        }, result.Message);
+    }
+
+    public async Task<ApiResponse<SeatReleaseResponse>> ReleaseSeatAsync(
+        Guid eventId, Guid eventSeatId, Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        // Verify seat exists
+        var seat = await _eventSeatRepo.GetByIdAsync(eventSeatId, cancellationToken);
+        if (seat == null)
+        {
+            return ApiResponse<SeatReleaseResponse>.Fail(
+                "SEAT_NOT_FOUND",
+                "The specified seat does not exist.");
+        }
+
+        if (seat.EventId != eventId)
+        {
+            return ApiResponse<SeatReleaseResponse>.Fail(
+                "SEAT_NOT_FOUND",
+                "The seat does not belong to the specified event.");
+        }
+
+        // Call repository to release
+        var result = await _eventSeatRepo.ReleaseSeatAsync(eventId, eventSeatId, userId, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            var errorCode = result.IsBusinessRuleViolation ? "NOT_HELD_BY_USER" : "RELEASE_FAILED";
+            return ApiResponse<SeatReleaseResponse>.Fail(errorCode, result.Message);
+        }
+
+        return ApiResponse<SeatReleaseResponse>.Ok(new SeatReleaseResponse
+        {
+            EventSeatId = eventSeatId,
+            EventId = eventId,
+            Status = "Available",
+            Message = result.Message
+        }, result.Message);
+    }
+
+    public async Task<ApiResponse<StandingHoldResponse>> HoldStandingAsync(
+        Guid eventId, Guid eventSectionId, Guid userId, int quantity, int holdDurationSeconds = 600,
+        CancellationToken cancellationToken = default)
+    {
+        if (quantity <= 0)
+        {
+            return ApiResponse<StandingHoldResponse>.Fail(
+                "INVALID_QUANTITY",
+                "Quantity must be greater than zero.");
+        }
+
+        // Get available standing seats
+        var availableSeats = (await _eventSeatRepo.GetAvailableStandingSeatsAsync(
+            eventId, eventSectionId, quantity, cancellationToken)).ToList();
+
+        if (availableSeats.Count == 0)
+        {
+            return ApiResponse<StandingHoldResponse>.Fail(
+                "SECTION_NOT_FOUND",
+                "No available standing seats found in the specified section.");
+        }
+
+        if (availableSeats.Count < quantity)
+        {
+            return ApiResponse<StandingHoldResponse>.Fail(
+                "INSUFFICIENT_AVAILABILITY",
+                $"Only {availableSeats.Count} seats available, but {quantity} requested.");
+        }
+
+        // Hold each seat
+        var heldSeatIds = new List<Guid>();
+        DateTime? lockedUntil = null;
+
+        foreach (var seat in availableSeats.Take(quantity))
+        {
+            var result = await _eventSeatRepo.HoldSeatAsync(
+                eventId, seat.EventSeatId, userId, holdDurationSeconds, cancellationToken);
+
+            if (result.IsSuccess)
+            {
+                heldSeatIds.Add(seat.EventSeatId);
+                if (lockedUntil == null)
+                {
+                    var updatedSeat = await _eventSeatRepo.GetByIdAsync(seat.EventSeatId, cancellationToken);
+                    lockedUntil = updatedSeat?.LockedUntil;
+                }
+            }
+        }
+
+        if (heldSeatIds.Count == 0)
+        {
+            return ApiResponse<StandingHoldResponse>.Fail(
+                "HOLD_FAILED",
+                "Failed to hold any standing seats. They may have been taken by another user.");
+        }
+
+        return ApiResponse<StandingHoldResponse>.Ok(new StandingHoldResponse
+        {
+            EventId = eventId,
+            EventSectionId = eventSectionId,
+            QuantityHeld = heldSeatIds.Count,
+            HeldSeatIds = heldSeatIds,
+            LockedUntil = lockedUntil,
+            Message = $"Successfully held {heldSeatIds.Count} standing tickets."
+        }, $"Successfully held {heldSeatIds.Count} standing tickets.");
+    }
+
     // ─── Mapping ──────────────────────────────────────────────────
 
     private static EventSeatResponse MapToResponse(EventSeat seat)
