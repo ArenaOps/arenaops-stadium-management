@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
     ArrowLeft,
     Building2,
@@ -173,7 +174,14 @@ export default function CreateStadiumPage() {
                         <label className={styles.label}>Stadium Image</label>
                         {previewUrl ? (
                             <div className={styles.imagePreview}>
-                                <img src={previewUrl} alt="Preview" />
+                                <Image
+                                    src={previewUrl}
+                                    alt="Preview"
+                                    width={1200}
+                                    height={600}
+                                    unoptimized
+                                    style={{ width: "100%", height: "200px", objectFit: "cover" }}
+                                />
                                 <button
                                     type="button"
                                     className={styles.removeImage}

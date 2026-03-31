@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { RootState } from "@/store/store";
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Ticket, Users, Activity, CalendarClock } from "lucide-react";
@@ -11,59 +9,41 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchMyEvents, selectEvents, selectEventsLoading } from "@/store/eventsSlice";
 
 export default function EventManagerDashboard() {
-  const { user } = useSelector((state: RootState) => state.auth);
+  const user = useAppSelector((state) => state.auth.user);
   const dispatch = useAppDispatch();
 
   // Redux state
   const events = useAppSelector(selectEvents);
   const loading = useAppSelector(selectEventsLoading);
 
-  const [stats, setStats] = useState({
-    activeEvents: 0,
-    totalTicketsSold: 0,
-    upcomingSlots: 0,
-    targetRevenue: 0,
-  });
-
   useEffect(() => {
     dispatch(fetchMyEvents());
   }, [dispatch]);
 
-  useEffect(() => {
-    if (!loading && events.length >= 0) {
-      const liveEvents = events.filter(e => e.status === 'Live');
-
-      setStats({
-        activeEvents: liveEvents.length,
-        totalTicketsSold: 0, // TODO: Requires bookings API integration
-        upcomingSlots: 0, // TODO: Aggregate slots in next 7 days
-        targetRevenue: 0, // TODO: Calculate from ticket types
-      });
-    }
-  }, [events, loading]);
+  const activeEvents = events.filter((event) => event.status === "Live").length;
 
   const statsData = [
     {
       label: "Active Events",
-      value: stats.activeEvents.toString(),
+      value: activeEvents.toString(),
       description: "Events currently running or published",
       icon: Activity,
     },
     {
       label: "Total Tickets Sold",
-      value: stats.totalTicketsSold.toString(),
+      value: "0",
       description: "Across all active events",
       icon: Ticket,
     },
     {
       label: "Upcoming Schedules",
-      value: stats.upcomingSlots.toString(),
+      value: "0",
       description: "Slots configured for next 7 days",
       icon: CalendarClock,
     },
     {
       label: "Target Revenue",
-      value: `$${stats.targetRevenue.toFixed(2)}`,
+      value: "$0.00",
       description: "Estimated gross based on inventory",
       icon: Users,
     },

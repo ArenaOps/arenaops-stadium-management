@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { MapPin, Users, Calendar, CheckCircle, Clock, Building2 } from "lucide-react";
 import type { Stadium } from "@/services/coreService";
 import styles from "./StadiumCard.module.scss";
@@ -18,9 +19,12 @@ export function StadiumCard({ stadium, eventCount = 0 }: StadiumCardProps) {
                 {/* Image Section */}
                 <div className={styles.imageWrapper}>
                     {stadium.imageUrl ? (
-                        <img
+                        <Image
                             src={stadium.imageUrl}
                             alt={stadium.name}
+                            fill
+                            unoptimized
+                            sizes="(max-width: 768px) 100vw, 25vw"
                             className={styles.stadiumImage}
                         />
                     ) : (

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "@/store/store";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/store/store";
 import { registerEventManagerUser } from "@/store/authSlice";
 import { useRouter } from "next/navigation";
 import {
@@ -26,7 +26,6 @@ export default function EventManagerRegisterForm() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
 
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
 
   const [form, setForm] = useState({
@@ -46,18 +45,6 @@ export default function EventManagerRegisterForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const errors: Record<string, string> = {};
-
-    if (!form.fullName) errors.fullName = "Full name is required";
-    if (!form.email) errors.email = "Email address is required";
-    if (!form.password || form.password.length < 6)
-      errors.password = "Password must be at least 6 characters";
-
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      return;
-    }
-    setFormErrors({});
 
     const result = await dispatch(
       registerEventManagerUser({
@@ -176,6 +163,7 @@ export default function EventManagerRegisterForm() {
                         type="text"
                         value={form.fullName}
                         onChange={handleChange}
+                        required
                       />
                     </div>
                   </div>
@@ -195,6 +183,7 @@ export default function EventManagerRegisterForm() {
                         type="email"
                         value={form.email}
                         onChange={handleChange}
+                        required
                       />
                     </div>
                   </div>
@@ -310,6 +299,8 @@ export default function EventManagerRegisterForm() {
                       type={showPassword ? "text" : "password"}
                       value={form.password}
                       onChange={handleChange}
+                      minLength={6}
+                      required
                     />
                     <button
                       type="button"

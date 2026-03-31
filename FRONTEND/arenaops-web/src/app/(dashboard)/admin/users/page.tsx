@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button, Skeleton } from "@/components/ui";
 import {
   useUsers,
@@ -16,7 +16,6 @@ import {
   Users,
   Search,
   Filter,
-  MoreHorizontal,
   CheckCircle2,
   XCircle,
   Shield,
@@ -28,7 +27,7 @@ import {
   RefreshCw,
   AlertTriangle,
 } from "lucide-react";
-import { formatDistanceToNow, format } from "date-fns";
+import { format } from "date-fns";
 
 export default function UserManagementPage() {
   const [filter, setFilter] = useState<UserFilterRequest>({

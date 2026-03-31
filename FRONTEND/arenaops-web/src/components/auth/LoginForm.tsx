@@ -106,7 +106,7 @@ export default function LoginForm() {
 
     if (loginUser.fulfilled.match(result)) {
       success("Welcome back to the Arena!");
-      const userPayload = result.payload as any;
+      const userPayload = result.payload;
       if (userPayload?.roles?.includes("Admin")) {
         router.push("/admin/dashboard");
       } else if (userPayload?.roles?.includes("StadiumOwner")) {

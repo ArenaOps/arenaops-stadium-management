@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, Users, Globe, Search, Filter } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchStadiums, selectStadiums, selectStadiumsLoading } from "@/store/stadiumsSlice";
@@ -77,10 +78,13 @@ export default function StadiumDiscoveryPage() {
                                 {stadium.imageUrl ? (
                                     <>
                                         {/* Cloudinary Image */}
-                                        <img
+                                        <Image
                                             src={stadium.imageUrl}
                                             alt={stadium.name}
-                                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                            fill
+                                            unoptimized
+                                            sizes="(max-width: 768px) 100vw, 33vw"
+                                            className="object-cover group-hover:scale-105 transition-transform duration-500"
                                         />
                                         {/* Dark overlay for better text readability */}
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
