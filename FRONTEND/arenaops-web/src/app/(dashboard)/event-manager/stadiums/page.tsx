@@ -5,28 +5,24 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription }
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, Users, Globe, Search, Filter } from "lucide-react";
-import { coreService, Stadium } from "@/services/coreService";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { fetchStadiums, selectStadiums, selectStadiumsLoading } from "@/store/stadiumsSlice";
 
 export default function StadiumDiscoveryPage() {
-    const [stadiums, setStadiums] = useState<Stadium[]>([]);
-    const [loading, setLoading] = useState(true);
+    const dispatch = useAppDispatch();
+
+    // Redux state
+    const stadiums = useAppSelector(selectStadiums);
+    const loading = useAppSelector(selectStadiumsLoading);
+
+    // Local filter state
     const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
-        const fetchStadiums = async () => {
-            try {
-                const res = await coreService.getStadiums();
-                setStadiums(res.data);
-            } catch (error) {
-                console.error("Failed to fetch stadiums", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchStadiums();
-    }, []);
+        dispatch(fetchStadiums());
+    }, [dispatch]);
 
     const filteredStadiums = stadiums.filter(s => 
         s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -78,12 +74,26 @@ export default function StadiumDiscoveryPage() {
                     filteredStadiums.map((stadium) => (
                         <Card key={stadium.stadiumId} className="bg-[#111827] border-white/5 text-white overflow-hidden group hover:border-[#10b981]/30 transition-all duration-500 flex flex-col">
                             <div className="relative h-48 overflow-hidden bg-black flex items-center justify-center">
-                                {/* Procedural gradient backdrop since we don't have images in DB yet */}
-                                <div className="absolute inset-0 bg-gradient-to-br from-[#10b981]/20 to-blue-900/20 mix-blend-screen opacity-50 group-hover:opacity-100 transition-opacity duration-500"></div>
-                                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
-                                
-                                <Globe className="w-16 h-16 text-white/10 group-hover:scale-110 transition-transform duration-500" />
-                                
+                                {stadium.imageUrl ? (
+                                    <>
+                                        {/* Cloudinary Image */}
+                                        <img
+                                            src={stadium.imageUrl}
+                                            alt={stadium.name}
+                                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                        />
+                                        {/* Dark overlay for better text readability */}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                                    </>
+                                ) : (
+                                    <>
+                                        {/* Fallback gradient backdrop */}
+                                        <div className="absolute inset-0 bg-gradient-to-br from-[#10b981]/20 to-blue-900/20 mix-blend-screen opacity-50 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
+                                        <Globe className="w-16 h-16 text-white/10 group-hover:scale-110 transition-transform duration-500" />
+                                    </>
+                                )}
+
                                 <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-[10px] font-bold tracking-widest uppercase flex items-center gap-2 text-[#10b981]">
                                     <Users className="w-3 h-3" />
                                     {stadium.capacity?.toLocaleString() || "VARIES"} CAP

@@ -1,4 +1,5 @@
 using ArenaOps.CoreService.Domain.Entities;
+using ArenaOps.CoreService.Application.DTOs;
 
 namespace ArenaOps.CoreService.Application.Interfaces;
 
@@ -56,4 +57,35 @@ public interface IEventSeatRepository
     /// </summary>
     Task<Dictionary<Guid, decimal?>> GetMinPricesByEventSectionIdsAsync(
         IEnumerable<Guid> eventSectionIds, CancellationToken cancellationToken = default);
+
+    // ─── Seat Hold Operations (via sp_ManageSeating) ─────────────────────
+
+    /// <summary>
+    /// Hold a single seat using sp_ManageSeating with Action='HOLD'.
+    /// Returns the stored procedure result (Status, Message, AffectedCount).
+    /// </summary>
+    Task<SeatOperationResult> HoldSeatAsync(
+        Guid eventId, Guid eventSeatId, Guid userId, int holdDurationSeconds = 600,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Release a held seat by setting it back to Available.
+    /// Only the user who holds the seat can release it.
+    /// </summary>
+    Task<SeatOperationResult> ReleaseSeatAsync(
+        Guid eventId, Guid eventSeatId, Guid userId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get a single EventSeat by ID.
+    /// </summary>
+    Task<EventSeat?> GetByIdAsync(Guid eventSeatId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get available seats for a standing section (for bulk hold).
+    /// Returns seats with Status = 'Available' or expired holds.
+    /// </summary>
+    Task<IEnumerable<EventSeat>> GetAvailableStandingSeatsAsync(
+        Guid eventId, Guid eventSectionId, int quantity,
+        CancellationToken cancellationToken = default);
 }
