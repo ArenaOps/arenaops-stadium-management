@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   User,
   Shield,
@@ -32,9 +32,20 @@ import { AppDispatch } from "@/store/store";
 import styles from "./profile.module.scss";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { setAuthUser } from "@/store/authSlice";
 
 type TabType = "general" | "security" | "bookings";
 type NotificationType = { type: "success" | "error"; message: string } | null;
+
+const isManager = (roles?: string[]) =>
+  roles?.some(
+    (r) =>
+      r.toLowerCase() === "event_manager" ||
+      r.toLowerCase() === "eventmanager",
+  );
+
+const isUser = (roles?: string[]) =>
+  roles?.some((r) => r.toLowerCase() === "user");
 
 export default function ProfilePage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -69,58 +80,49 @@ export default function ProfilePage() {
     confirmPassword: "",
   });
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
-    try {
-      const response = await authService.getProfile();
-      if (response.success && response.data) {
-        const u = response.data;
-        setUser(u);
-
-        setFormData({
-          fullName: u.fullName || "",
-          phoneNumber: u.phoneNumber || "",
-          organizationName: u.eventManagerDetails?.organizationName || "",
-          gstNumber: u.eventManagerDetails?.gstNumber || "",
-          designation: u.eventManagerDetails?.designation || "",
-          website: u.eventManagerDetails?.website || "",
-        });
-
-        // Fetch bookings if user role
-        if (isUser(u.roles)) {
-          try {
-            const bookingsResponse = await coreService.getMyBookings();
-            if (bookingsResponse.success) {
-              setBookings(bookingsResponse.data || []);
-            }
-          } catch {
-            // Bookings API might not be implemented yet
-          }
-        }
-      }
-    } catch (err) {
-      showNotification("error", "Failed to load profile");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const showNotification = (type: "success" | "error", message: string) => {
+  const showNotification = useCallback((type: "success" | "error", message: string) => {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 4000);
-  };
+  }, []);
 
-  const isManager = (roles?: string[]) =>
-    roles?.some(
-      (r) =>
-        r.toLowerCase() === "event_manager" ||
-        r.toLowerCase() === "eventmanager",
-    );
-  const isUser = (roles?: string[]) =>
-    roles?.some((r) => r.toLowerCase() === "user");
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const response = await authService.getProfile();
+        if (response.success && response.data) {
+          const u = response.data;
+          setUser(u);
+
+          setFormData({
+            fullName: u.fullName || "",
+            phoneNumber: u.phoneNumber || "",
+            organizationName: u.eventManagerDetails?.organizationName || "",
+            gstNumber: u.eventManagerDetails?.gstNumber || "",
+            designation: u.eventManagerDetails?.designation || "",
+            website: u.eventManagerDetails?.website || "",
+          });
+
+          // Fetch bookings if user role
+          if (isUser(u.roles)) {
+            try {
+              const bookingsResponse = await coreService.getMyBookings();
+              if (bookingsResponse.success) {
+                setBookings(bookingsResponse.data || []);
+              }
+            } catch {
+              // Bookings API might not be implemented yet
+            }
+          }
+        }
+      } catch {
+        showNotification("error", "Failed to load profile");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, [showNotification]);
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,15 +144,8 @@ export default function ProfilePage() {
       const response = await authService.updateProfile(payload);
       if (response.success) {
         setUser(response.data);
+        dispatch(setAuthUser(response.data));
         showNotification("success", "Profile updated successfully");
-
-        // Update localStorage user data
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          const userData = JSON.parse(storedUser);
-          userData.fullName = response.data.fullName;
-          localStorage.setItem("user", JSON.stringify(userData));
-        }
       } else {
         showNotification("error", response.message || "Update failed");
       }
@@ -244,16 +239,9 @@ export default function ProfilePage() {
       const response = await authService.updateProfile(payload);
       if (response.success) {
         setUser(response.data);
+        dispatch(setAuthUser(response.data));
         showNotification("success", "Profile picture updated");
         closeModal();
-
-        // Update localStorage
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          const userData = JSON.parse(storedUser);
-          userData.profilePictureUrl = response.data.profilePictureUrl;
-          localStorage.setItem("user", JSON.stringify(userData));
-        }
       } else {
         showNotification("error", "Failed to update profile");
       }

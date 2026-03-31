@@ -52,14 +52,32 @@ function isAdminToken(token: string | undefined): boolean {
   return roles.includes(ADMIN_ROLE);
 }
 
+function hasAnyRole(token: string | undefined, requiredRoles: string[]): boolean {
+  if (!token) return false;
+  const payload = decodeJwtPayload(token);
+  const roles = extractRoles(payload);
+  return requiredRoles.some((role) => roles.includes(role));
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("accessToken")?.value;
   const isAdmin = isAdminToken(token);
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
+  const isManagerRoute = pathname === "/manager" || pathname.startsWith("/manager/");
+  const isEventManagerRoute =
+    pathname === "/event-manager" || pathname.startsWith("/event-manager/");
   const isAuthLanding = pathname === "/" || pathname === "/login";
 
   if (isAdminRoute && !isAdmin) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  if (isManagerRoute && !hasAnyRole(token, ["StadiumOwner", "Admin"])) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  if (isEventManagerRoute && !hasAnyRole(token, ["EventManager", "Admin"])) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
@@ -75,5 +93,13 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/login", "/admin/:path*"],
+  matcher: [
+    "/",
+    "/login",
+    "/admin/:path*",
+    "/manager",
+    "/manager/:path*",
+    "/event-manager",
+    "/event-manager/:path*",
+  ],
 };

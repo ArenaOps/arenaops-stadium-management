@@ -20,7 +20,7 @@ const debugLog = (message: string, payload?: Record<string, unknown>) => {
 
 const clearClientSession = () => {
     if (typeof window === 'undefined') return;
-    localStorage.removeItem('user');
+    // Session state lives in HttpOnly cookies and Redux, so a hard redirect is enough.
 };
 
 const redirectToLogin = () => {
