@@ -237,5 +237,6 @@ public class SectionController : ControllerBase
         }
 
         return userId;
+        
     }
 }

@@ -67,6 +67,12 @@ builder.Services.AddScoped<IEventSeatService, EventSeatService>();
 builder.Services.AddScoped<IBowlService, BowlService>();
 builder.Services.AddScoped<IFieldConfigService, FieldConfigService>();
 
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient("AuthServiceClient", client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5001");
+});
+
 // 3a-redis. Redis Cache
 var redisConnectionString = builder.Configuration.GetValue<string>("Redis:ConnectionString") ?? "localhost:6379";
 var redisInstanceName = builder.Configuration.GetValue<string>("Redis:InstanceName") ?? "ArenaOps_";

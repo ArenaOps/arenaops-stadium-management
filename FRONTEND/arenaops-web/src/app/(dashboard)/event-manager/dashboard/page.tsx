@@ -7,41 +7,63 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Ticket, Users, Activity, CalendarClock } from "lucide-react";
 import Link from "next/link";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { fetchMyEvents, selectEvents, selectEventsLoading } from "@/store/eventsSlice";
 
 export default function EventManagerDashboard() {
   const { user } = useSelector((state: RootState) => state.auth);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useAppDispatch();
 
-  // Simulate initial fake loading for premium feel
+  // Redux state
+  const events = useAppSelector(selectEvents);
+  const loading = useAppSelector(selectEventsLoading);
+
+  const [stats, setStats] = useState({
+    activeEvents: 0,
+    totalTicketsSold: 0,
+    upcomingSlots: 0,
+    targetRevenue: 0,
+  });
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1200);
-    return () => clearTimeout(timer);
-  }, []);
+    dispatch(fetchMyEvents());
+  }, [dispatch]);
 
-  const stats = [
+  useEffect(() => {
+    if (!loading && events.length >= 0) {
+      const liveEvents = events.filter(e => e.status === 'Live');
+
+      setStats({
+        activeEvents: liveEvents.length,
+        totalTicketsSold: 0, // TODO: Requires bookings API integration
+        upcomingSlots: 0, // TODO: Aggregate slots in next 7 days
+        targetRevenue: 0, // TODO: Calculate from ticket types
+      });
+    }
+  }, [events, loading]);
+
+  const statsData = [
     {
       label: "Active Events",
-      value: "0",
+      value: stats.activeEvents.toString(),
       description: "Events currently running or published",
       icon: Activity,
     },
     {
       label: "Total Tickets Sold",
-      value: "0",
+      value: stats.totalTicketsSold.toString(),
       description: "Across all active events",
       icon: Ticket,
     },
     {
       label: "Upcoming Schedules",
-      value: "0",
+      value: stats.upcomingSlots.toString(),
       description: "Slots configured for next 7 days",
       icon: CalendarClock,
     },
     {
       label: "Target Revenue",
-      value: "$0.00",
+      value: `$${stats.targetRevenue.toFixed(2)}`,
       description: "Estimated gross based on inventory",
       icon: Users,
     },
@@ -69,7 +91,7 @@ export default function EventManagerDashboard() {
 
       {/* KPI Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, i) => {
+        {statsData.map((stat, i) => {
           const Icon = stat.icon;
           return (
             <Card key={i} className="bg-[#111827] border-white/5 text-white backdrop-blur-md">
