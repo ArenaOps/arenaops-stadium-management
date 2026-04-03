@@ -18,42 +18,42 @@ public class SeatingPlanService : ISeatingPlanService
         _repository = repository;
     }
 
-    public async Task<ApiResponse<SeatingPlanResponse>> GetByIdAsync(Guid seatingPlanId, CancellationToken cancellationToken = default)
+    public async Task<ApiResponse<SeatingPlanDto>> GetByIdAsync(Guid seatingPlanId, CancellationToken cancellationToken = default)
     {
         var seatingPlan = await _repository.GetByIdAsync(seatingPlanId, cancellationToken);
         if (seatingPlan == null)
-            return ApiResponse<SeatingPlanResponse>.Fail("NOT_FOUND", "Seating plan not found");
+            return ApiResponse<SeatingPlanDto>.Fail("NOT_FOUND", "Seating plan not found");
 
-        return ApiResponse<SeatingPlanResponse>.Ok(MapToResponse(seatingPlan));
+        return ApiResponse<SeatingPlanDto>.Ok(MapToDto(seatingPlan));
     }
 
-    public async Task<ApiResponse<IEnumerable<SeatingPlanResponse>>> GetByStadiumIdAsync(Guid stadiumId, CancellationToken cancellationToken = default)
+    public async Task<ApiResponse<IEnumerable<SeatingPlanDto>>> GetByStadiumIdAsync(Guid stadiumId, CancellationToken cancellationToken = default)
     {
         var seatingPlans = await _repository.GetByStadiumIdAsync(stadiumId, cancellationToken);
-        var dtos = seatingPlans.Select(MapToResponse);
-        return ApiResponse<IEnumerable<SeatingPlanResponse>>.Ok(dtos);
+        var dtos = seatingPlans.Select(MapToDto);
+        return ApiResponse<IEnumerable<SeatingPlanDto>>.Ok(dtos);
     }
 
-    public async Task<ApiResponse<IEnumerable<SeatingPlanResponse>>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<ApiResponse<IEnumerable<SeatingPlanDto>>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var seatingPlans = await _repository.GetAllAsync(cancellationToken);
-        var dtos = seatingPlans.Select(MapToResponse);
-        return ApiResponse<IEnumerable<SeatingPlanResponse>>.Ok(dtos);
+        var dtos = seatingPlans.Select(MapToDto);
+        return ApiResponse<IEnumerable<SeatingPlanDto>>.Ok(dtos);
     }
 
-    public async Task<ApiResponse<SeatingPlanResponse>> CreateAsync(CreateSeatingPlanRequest request, Guid ownerId, CancellationToken cancellationToken = default)
+    public async Task<ApiResponse<SeatingPlanDto>> CreateAsync(CreateSeatingPlanRequest request, Guid ownerId, CancellationToken cancellationToken = default)
     {
         // Verify stadium exists
         var stadiumExists = await _repository.StadiumExistsAsync(request.StadiumId, cancellationToken);
         if (!stadiumExists)
-            return ApiResponse<SeatingPlanResponse>.Fail("STADIUM_NOT_FOUND", "Stadium not found");
+            return ApiResponse<SeatingPlanDto>.Fail("STADIUM_NOT_FOUND", "Stadium not found");
 
         // Ensure 1:1 relationship between stadium and seating plan
         var existingPlans = await _repository.GetByStadiumIdAsync(request.StadiumId, cancellationToken);
         var existingPlan = existingPlans.FirstOrDefault();
         if (existingPlan != null)
         {
-            return ApiResponse<SeatingPlanResponse>.Ok(MapToResponse(existingPlan), "Seating plan already exists");
+            return ApiResponse<SeatingPlanDto>.Ok(MapToDto(existingPlan), "Seating plan already exists");
         }
 
         var seatingPlan = new SeatingPlan
@@ -67,14 +67,14 @@ public class SeatingPlanService : ISeatingPlanService
         };
 
         var created = await _repository.CreateAsync(seatingPlan, cancellationToken);
-        return ApiResponse<SeatingPlanResponse>.Ok(MapToResponse(created), "Seating plan created successfully");
+        return ApiResponse<SeatingPlanDto>.Ok(MapToDto(created), "Seating plan created successfully");
     }
 
-    public async Task<ApiResponse<SeatingPlanResponse>> UpdateAsync(Guid seatingPlanId, UpdateSeatingPlanRequest request, Guid ownerId, CancellationToken cancellationToken = default)
+    public async Task<ApiResponse<SeatingPlanDto>> UpdateAsync(Guid seatingPlanId, UpdateSeatingPlanRequest request, Guid ownerId, CancellationToken cancellationToken = default)
     {
         var seatingPlan = await _repository.GetByIdAsync(seatingPlanId, cancellationToken);
         if (seatingPlan == null)
-            return ApiResponse<SeatingPlanResponse>.Fail("NOT_FOUND", "Seating plan not found");
+            return ApiResponse<SeatingPlanDto>.Fail("NOT_FOUND", "Seating plan not found");
 
         // Update properties
         seatingPlan.Name = request.Name;
@@ -85,7 +85,7 @@ public class SeatingPlanService : ISeatingPlanService
         }
 
         var updated = await _repository.UpdateAsync(seatingPlan, cancellationToken);
-        return ApiResponse<SeatingPlanResponse>.Ok(MapToResponse(updated), "Seating plan updated successfully");
+        return ApiResponse<SeatingPlanDto>.Ok(MapToDto(updated), "Seating plan updated successfully");
     }
 
     public async Task<ApiResponse<object>> DeleteAsync(Guid seatingPlanId, Guid ownerId, CancellationToken cancellationToken = default)
@@ -101,19 +101,43 @@ public class SeatingPlanService : ISeatingPlanService
         return ApiResponse<object>.Ok(new { }, "Seating plan deleted successfully");
     }
 
-    private static SeatingPlanResponse MapToResponse(SeatingPlan seatingPlan)
+    private static SeatingPlanDto MapToDto(SeatingPlan seatingPlan)
     {
-        return new SeatingPlanResponse
+        return new SeatingPlanDto
         {
             SeatingPlanId = seatingPlan.SeatingPlanId,
             StadiumId = seatingPlan.StadiumId,
-            StadiumName = seatingPlan.Stadium?.Name ?? string.Empty,
             Name = seatingPlan.Name,
             Description = seatingPlan.Description,
-            CreatedAt = seatingPlan.CreatedAt,
-            IsActive = seatingPlan.IsActive,
-            SectionCount = seatingPlan.Sections?.Count ?? 0,
-            LandmarkCount = seatingPlan.Landmarks?.Count ?? 0
+            FieldConfigMetadata = seatingPlan.FieldConfigMetadata,
+            TotalCapacity = seatingPlan.TotalCapacity,
+            Sections = seatingPlan.Sections?.Select(s => new SectionDto
+            {
+                SectionId = s.SectionId,
+                SeatingPlanId = s.SeatingPlanId,
+                Name = s.Name,
+                Type = s.Type,
+                Capacity = s.Capacity,
+                SeatType = s.SeatType,
+                Color = s.Color,
+                PosX = s.PosX,
+                PosY = s.PosY,
+                Rows = s.Rows,
+                SeatsPerRow = s.SeatsPerRow,
+                GeometryType = s.GeometryType,
+                GeometryData = s.GeometryData
+            }).ToList() ?? new List<SectionDto>(),
+            Landmarks = seatingPlan.Landmarks?.Select(l => new LandmarkDto
+            {
+                FeatureId = l.FeatureId,
+                SeatingPlanId = l.SeatingPlanId,
+                Type = l.Type,
+                Label = l.Label,
+                PosX = l.PosX,
+                PosY = l.PosY,
+                Width = l.Width,
+                Height = l.Height
+            }).ToList() ?? new List<LandmarkDto>()
         };
     }
 }
