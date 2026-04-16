@@ -12,7 +12,7 @@ export default function EventCreatePage() {
 
     useEffect(() => {
         // Check if user is EventManager
-        if (user && user.role !== 'EventManager' && user.role !== 'Admin') {
+        if (user && !user.roles?.includes('EventManager') && !user.roles?.includes('Admin')) {
             router.push('/event-manager/events');
         }
     }, [user, router]);
