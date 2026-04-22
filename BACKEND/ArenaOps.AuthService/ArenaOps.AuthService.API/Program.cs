@@ -59,7 +59,7 @@ try
         {
             policy.WithOrigins(
                     "http://localhost:3000",
-                    "https://localhost:3000"
+                    "https://arenaops.netlify.app" 
                 )
                 .AllowAnyHeader()
                 .AllowAnyMethod()
