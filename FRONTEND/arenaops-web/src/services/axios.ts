@@ -1,25 +1,18 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 
 // 🔥 Use backend directly (NO BFF)
-const API = process.env.NEXT_PUBLIC_API_URL;
+const API =
+  typeof window !== "undefined"
+    ? ""
+    : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
-// Safety check (prevents silent failures)
-if (!API) {
-  throw new Error("❌ NEXT_PUBLIC_API_URL is not defined");
-}
-
-// ✅ Axios instance
 export const api = axios.create({
-  baseURL: API, // 👉 http://13.60.206.243
-  withCredentials: true, // required for cookies
+  baseURL: `${API}/api`,
+  withCredentials: true,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
-
-// ─────────────────────────────────────────────────────────────
-// 🔁 Token refresh handling (optional but kept from your logic)
-// ─────────────────────────────────────────────────────────────
 
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -51,12 +44,16 @@ api.interceptors.response.use(
     }
 
     // 🔒 Handle 401 (token expired)
-    if (error.response.status === 401 && !originalRequest._retry) {
+    if (
+      error.response.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes("/core/events")
+    ) {
       // Token revoked → force logout
-      if ((error.response.data as any)?.error?.code === 'TOKEN_REVOKED') {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('user');
-          window.location.href = '/login';
+      if ((error.response.data as any)?.error?.code === "TOKEN_REVOKED") {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("user");
+          window.location.href = "/login";
         }
         return Promise.reject(error);
       }
@@ -75,18 +72,22 @@ api.interceptors.response.use(
 
       try {
         // 🔁 Refresh token (IMPORTANT: direct backend call)
-        await axios.post(`${API}/api/auth/refresh`, {}, {
-          withCredentials: true,
-        });
+        await axios.post(
+          `${API}/auth/refresh`,
+          {},
+          {
+            withCredentials: true,
+          },
+        );
 
         processQueue(null);
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError);
 
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('user');
-          window.location.href = '/login';
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("user");
+          window.location.href = "/login";
         }
 
         return Promise.reject(refreshError);
@@ -96,12 +97,8 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
-
-
-
-
 
 // import axios from 'axios';
 

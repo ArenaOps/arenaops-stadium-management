@@ -94,62 +94,62 @@ export interface ResetPasswordPayload {
 
 export const authService = {
     login: async (payload: LoginPayload): Promise<AuthResponse> => {
-        const response = await api.post<AuthResponse>('/api/auth/login', payload);
+        const response = await api.post<AuthResponse>('/auth/login', payload);
         return response.data;
     },
 
     register: async (payload: RegisterPayload): Promise<AuthResponse> => {
-        const response = await api.post<AuthResponse>('/api/auth/register', payload);
+        const response = await api.post<AuthResponse>('/auth/register', payload);
         return response.data;
     },
 
     registerEventManager: async (payload: RegisterEventManagerPayload): Promise<AuthResponse> => {
-        // Points to the BFF proxy route, which forwards to /api/auth/event-managers/register
-        const response = await api.post<AuthResponse>('/api/auth/event-managers/register', payload);
+        // Points to the BFF proxy route, which forwards to /auth/event-managers/register
+        const response = await api.post<AuthResponse>('/auth/event-managers/register', payload);
         return response.data;
     },
 
     // No body needed — refreshToken is sent automatically via HttpOnly cookie
     refreshToken: async (): Promise<AuthResponse> => {
-        const response = await api.post<AuthResponse>('/api/auth/refresh', {});
+        const response = await api.post<AuthResponse>('/auth/refresh', {});
         return response.data;
     },
 
     // No body needed — both tokens are sent automatically via HttpOnly cookies
     logout: async (): Promise<{ success: boolean; message: string }> => {
-        const response = await api.post('/api/auth/logout');
+        const response = await api.post('/auth/logout');
         return response.data;
     },
 
     googleLogin: async (code: string, redirectUri: string): Promise<AuthResponse> => {
-        const response = await api.post<AuthResponse>('/api/auth/google', { code, redirectUri });
+        const response = await api.post<AuthResponse>('/auth/google', { code, redirectUri });
         return response.data;
     },
 
     forgotPassword: async (email: string): Promise<{ success: boolean; message: string }> => {
-        const response = await api.post('/api/auth/forgot-password', { email });
+        const response = await api.post('/auth/forgot-password', { email });
         return response.data;
     },
 
     resetPassword: async (payload: ResetPasswordPayload): Promise<{ success: boolean; message: string }> => {
-        const response = await api.post('/api/auth/reset-password', payload);
+        const response = await api.post('/auth/reset-password', payload);
         return response.data;
     },
 
     // ─── Profile Endpoints ───────────────────────────────────────────────────
 
     getProfile: async (): Promise<ProfileResponse> => {
-        const response = await api.get<ProfileResponse>('/api/auth/profile/me');
+        const response = await api.get<ProfileResponse>('/auth/profile/me');
         return response.data;
     },
 
     updateProfile: async (payload: UpdateProfilePayload): Promise<ProfileResponse> => {
-        const response = await api.put<ProfileResponse>('/api/auth/profile/me', payload);
+        const response = await api.put<ProfileResponse>('/auth/profile/me', payload);
         return response.data;
     },
 
     changePassword: async (payload: ChangePasswordPayload): Promise<{ success: boolean; message: string }> => {
-        const response = await api.post('/api/auth/change-password', payload);
+        const response = await api.post('/auth/change-password', payload);
         return response.data;
     },
 };

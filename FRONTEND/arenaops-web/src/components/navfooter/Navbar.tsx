@@ -22,8 +22,8 @@ import Image from "next/image";
 
 const navItems = [
   { icon: Home, label: "Home", href: "/" },
-  { icon: Trophy, label: "Matches", href: "/matches" },
-  { icon: Ticket, label: "Bookings", href: "/bookings" },
+  // { icon: Trophy, label: "Matches", href: "/matches" },
+  // { icon: Ticket, label: "Bookings", href: "/bookings" },
   { icon: User, label: "Profile", href: "/profile" },
 ];
 
