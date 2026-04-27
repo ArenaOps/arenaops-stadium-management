@@ -309,10 +309,22 @@ export const coreService = {
     },
 
     // ── Event Slots ──────────────────────────────────────
-    getEventSlots: async (eventId: string): Promise<ApiResponse<EventSlot[]>> => {
-        const response = await api.get(`/core/events/${eventId}/slots`);
-        return response.data;
-    },
+    getEventSlots: async (eventId: string) => {
+  try {
+    const response = await api.get(`/core/events/${eventId}/slots`);
+    return response.data;
+  } catch (error: any) {
+    if (error?.response?.status === 401) {
+      return {
+        success: false,
+        data: [],
+        message: "Login required to view slots",
+        error: null
+      };
+    }
+    throw error;
+  }
+},
 
     createEventSlot: async (eventId: string, payload: CreateSlotPayload): Promise<ApiResponse<EventSlot>> => {
         const response = await api.post(`/core/events/${eventId}/slots`, payload);
